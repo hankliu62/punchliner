@@ -76,15 +76,7 @@
 
 ### 2.1 获取 Vercel Token
 
-打开浏览器，访问 [Vercel 官网](https://vercel.com) 并登录你的账户。
-
-![Vercel 登录页面](https://picsum.photos/seed/vercel-login/800/400)
-
-点击右上角的头像，选择 **Settings** 进入设置页面：
-
-![Vercel 设置页面入口](https://picsum.photos/seed/vercel-settings/800/300)
-
-在左侧菜单中找到 **Tokens** 选项，点击进入令牌管理页面：
+打开浏览器，访问 Vercel 令牌管理页面：https://vercel.com/account/settings/tokens
 
 ![Vercel Tokens 页面](https://picsum.photos/seed/vercel-tokens/900/400)
 
@@ -95,6 +87,8 @@
 在弹出的对话框中，给令牌取一个容易识别的名称，例如「GitHub Actions Deploy」，然后点击 **Create**：
 
 > ⚠️ **重要提示**：令牌创建成功后，请立即复制并保存到安全的地方。Vercel 出于安全考虑，只会显示这一次！
+>
+> **注意**：创建的 Token 格式为 `vcp_` 开头（如 `vcp_xxxxxxxxxxxxxx`），不要与 `vercel link` 生成的 `VERCEL_OIDC_TOKEN` 混淆。
 
 ### 2.2 获取项目配置 ID
 
@@ -171,7 +165,7 @@ cat .vercel/project.json
 
 | Name | Secret 来源 | 示例值 |
 |------|-----------|--------|
-| `VERCEL_TOKEN` | Vercel Tokens 页面创建 | `wxp_xxxxxxxxxxxxxx` |
+| `VERCEL_TOKEN` | Vercel Tokens 页面创建 (vcp_ 开头) | `vcp_xxxxxxxxxxxxxx` |
 | `VERCEL_ORG_ID` | User ID (个人账户) 或 Team ID (团队) | `usr_xxxxxxxx` / `team_xxxxxxxx` |
 | `VERCEL_PROJECT_ID` | 项目 Settings 里的 Project ID | `prj_xxxxxxxx` |
 
@@ -388,20 +382,24 @@ jobs:
           MXNZP_APP_ID: ${{ secrets.MXNZP_APP_ID }}
           MXNZP_APP_SECRET: ${{ secrets.MXNZP_APP_SECRET }}
 
+      - name: 链接 Vercel 项目
+        run: |
+          npx vercel@latest link --token=${{ secrets.VERCEL_TOKEN }} --yes
+
       - name: 添加环境变量到 Vercel
         run: |
           # 添加 ZHIPU_API_KEY
-          echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }}
           
           # 添加 MXNZP_APP_ID
-          echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }}
           
           # 添加 MXNZP_APP_SECRET
-          echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: 部署到 Vercel
         run: |
-          npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }}
 ```
 
 ### 4.2 配置详解
@@ -479,28 +477,32 @@ Next.js 构建缓存可以显著缩短构建时间：
 #### Vercel 环境变量同步
 
 ```yaml
+- name: 链接 Vercel 项目
+  run: |
+    npx vercel@latest link --token=${{ secrets.VERCEL_TOKEN }} --yes
+
 - name: 添加环境变量到 Vercel
   run: |
     # 添加 ZHIPU_API_KEY
-    echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production ...
+    echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }}
     
     # 添加 MXNZP_APP_ID
-    echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production ...
+    echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }}
     
     # 添加 MXNZP_APP_SECRET
-    echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production ...
+    echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }}
 ```
 
 这一步非常重要！它会在每次部署时自动将 GitHub Secrets 中的环境变量同步到 Vercel，确保 Vercel 上的应用能够正确读取这些敏感配置。
 
-> ⚠️ **注意**：构建时配置的环境变量只在 GitHub Actions 构建过程中生效，不会自动同步到 Vercel 生产环境。因此需要使用 `vercel env add` 命令显式同步。
+> ⚠️ **注意**：构建时配置的环境变量只在 GitHub Actions 构建过程中生效，不会自动同步到 Vercel 生产环境。因此需要使用 `vercel link` 链接项目后，再用 `vercel env add` 命令显式同步。
 
 #### Vercel 部署
 
 ```yaml
 - name: 部署到 Vercel
   run: |
-    npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+    npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }}
 ```
 
 使用 `npx vercel@latest` 直接调用 Vercel CLI 进行部署，无需全局安装。使用 `--prod` 参数部署到生产环境。
@@ -794,7 +796,8 @@ jobs:
 
 | 错误信息 | 原因 | 解决方案 |
 |---------|------|---------|
-| Token is invalid | VERCEL_TOKEN 配置错误 | 检查并重新配置令牌，确保是 Legacy Token |
+| Token is invalid | VERCEL_TOKEN 配置错误 | 检查并重新配置令牌，确保是在 https://vercel.com/account/settings/tokens 创建的 Token（vcp_ 开头） |
+| Your codebase isn't linked to a project | 未链接 Vercel 项目 | 添加 `vercel link` 步骤先链接项目 |
 | Project not found | 项目 ID 配置错误 | 确认 VERCEL_PROJECT_ID 正确 |
 | Permission denied | 令牌权限不足 | 确保令牌具有项目访问权限 |
 
@@ -806,14 +809,18 @@ jobs:
 
 **解决方案**：
 
-本教程采用的方法是在 workflow 中使用 `vercel env add` 命令自动同步：
+本教程采用的方法是在 workflow 中先链接项目，再使用 `vercel env add` 命令自动同步：
 
 ```yaml
+- name: 链接 Vercel 项目
+  run: |
+    npx vercel@latest link --token=${{ secrets.VERCEL_TOKEN }} --yes
+
 - name: 添加环境变量到 Vercel
   run: |
-    echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production ...
-    echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production ...
-    echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production ...
+    echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }}
+    echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }}
+    echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }}
 ```
 
 或者手动在 Vercel Dashboard → 项目 Settings → Environment Variables 中添加。

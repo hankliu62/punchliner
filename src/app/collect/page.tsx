@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeftOutlined, DeleteOutlined, HeartFilled } from '@ant-design/icons'
+import { ArrowLeftOutlined, DeleteOutlined, HeartFilled, LoadingOutlined } from '@ant-design/icons'
 import { Button, Empty, Popconfirm } from 'antd'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -88,7 +88,10 @@ export default function CollectPage() {
 
       <main className={styles.main}>
         {loading ? (
-          <div className={styles.loading}>加载中...</div>
+          <div className={styles.loading}>
+            <LoadingOutlined className={styles.loadingIcon} spin />
+            <span>加载中...</span>
+          </div>
         ) : collects.length === 0 ? (
           <Empty
             description="暂无收藏"

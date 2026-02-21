@@ -1,6 +1,6 @@
 'use client'
 
-import { HeartFilled, HeartOutlined, ReloadOutlined } from '@ant-design/icons'
+import { HeartFilled, HeartOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Skeleton } from 'antd'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -12,7 +12,6 @@ import styles from './page.module.css'
 
 const COLLECT_STORAGE_KEY = 'punchliner_collects'
 const DAILY_JOKE_STORAGE_KEY = 'punchliner_daily_joke'
-const JOKES_STORAGE_KEY = 'punchliner_jokes'
 
 function getToday(): string {
   return new Date().toISOString().split('T')[0]
@@ -57,21 +56,6 @@ function saveDailyJoke(joke: Joke) {
   )
 }
 
-function getCachedJokes(): { page: number; jokes: Joke[]; hasMore: boolean } | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const data = sessionStorage.getItem(JOKES_STORAGE_KEY)
-    if (!data) return null
-    return JSON.parse(data)
-  } catch {
-    return null
-  }
-}
-
-function saveCachedJokes(page: number, jokes: Joke[], hasMore: boolean) {
-  sessionStorage.setItem(JOKES_STORAGE_KEY, JSON.stringify({ page, jokes, hasMore }))
-}
-
 function addCollect(joke: Joke) {
   const collects = getCollects()
   const newItem: CollectItem = {
@@ -89,6 +73,7 @@ function removeCollect(id: string) {
 export default function HomePage() {
   const [dailyJoke, setDailyJoke] = useState<Joke | null>(null)
   const [jokes, setJokes] = useState<Joke[]>([])
+  const [likes, setLikes] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [page, setPage] = useState(1)
@@ -119,17 +104,7 @@ export default function HomePage() {
     }
   }, [])
 
-  const fetchJokes = useCallback(async (pageNum: number, forceRefresh: boolean = false) => {
-    if (!forceRefresh && pageNum === 1) {
-      const cached = getCachedJokes()
-      if (cached && cached.jokes.length > 0) {
-        setJokes(cached.jokes)
-        setPage(cached.page)
-        setHasMore(cached.hasMore)
-        return
-      }
-    }
-
+  const fetchJokes = useCallback(async (pageNum: number, isLoadMore: boolean = false) => {
     try {
       const res = await fetch(`/api/jokes/list?page=${pageNum}`)
       const data = await res.json()
@@ -137,13 +112,8 @@ export default function HomePage() {
         const newList = data.data.list
         if (pageNum === 1) {
           setJokes(newList)
-          saveCachedJokes(1, newList, data.data.page < data.data.totalPage)
         } else {
-          setJokes((prev) => {
-            const updated = [...prev, ...newList]
-            saveCachedJokes(pageNum, updated, data.data.page < data.data.totalPage)
-            return updated
-          })
+          setJokes((prev) => [...prev, ...newList])
         }
         setHasMore(data.data.page < data.data.totalPage)
       }
@@ -151,6 +121,19 @@ export default function HomePage() {
       console.error('Failed to fetch jokes:', error)
     }
   }, [])
+
+  // 为新段子生成固定点赞数（内存缓存）
+  const getLikes = useCallback(
+    (jokeId: string) => {
+      if (!likes[jokeId]) {
+        const newLikes = Math.floor(Math.random() * 9000) + 1000
+        setLikes((prev) => ({ ...prev, [jokeId]: newLikes }))
+        return newLikes
+      }
+      return likes[jokeId]
+    },
+    [likes]
+  )
 
   useEffect(() => {
     const init = async () => {
@@ -175,14 +158,33 @@ export default function HomePage() {
     toast.success('换了一个新段子')
   }
 
-  const handleLoadMore = async () => {
+  const handleLoadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return
     setLoadingMore(true)
     const nextPage = page + 1
     setPage(nextPage)
-    await fetchJokes(nextPage, false)
+    await fetchJokes(nextPage, true)
     setLoadingMore(false)
-  }
+  }, [loadingMore, hasMore, page, fetchJokes])
+
+  // 滚动到底部自动加载更多
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loadingMore || !hasMore) return
+
+      const scrollTop = window.scrollY
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight
+
+      // 距离底部 200px 时触发加载
+      if (scrollTop + windowHeight >= documentHeight - 200) {
+        handleLoadMore()
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [loadingMore, hasMore, handleLoadMore])
 
   const handleCollect = (joke: Joke) => {
     if (collectedIds.has(joke.id)) {
@@ -198,10 +200,6 @@ export default function HomePage() {
       setCollectedIds((prev) => new Set(prev).add(joke.id))
       toast.success('收藏成功')
     }
-  }
-
-  const getRandomLikes = () => {
-    return Math.floor(Math.random() * 9000) + 1000
   }
 
   return (
@@ -297,19 +295,25 @@ export default function HomePage() {
                             <HeartOutlined />
                           )}
                         </span>
-                        <span className={styles.likeCount}>👍 {getRandomLikes()}</span>
+                        <span className={styles.likeCount}>👍 {getLikes(joke.id)}</span>
                       </div>
                     </div>
                   </Link>
                 ))}
               </div>
-              {hasMore && (
-                <div className={styles.loadMore}>
-                  <Button onClick={handleLoadMore} loading={loadingMore} block>
-                    {loadingMore ? '加载中...' : '加载更多'}
-                  </Button>
-                </div>
-              )}
+              {/* 滚动加载更多触发器 */}
+              <div className={styles.loadMore}>
+                {loadingMore && (
+                  <div className={styles.loadingContainer}>
+                    <LoadingOutlined className={styles.loadingIcon} spin />
+                    <span>加载中...</span>
+                  </div>
+                )}
+                {!hasMore && jokes.length > 0 && <span>没有更多了</span>}
+                {hasMore && !loadingMore && (
+                  <span className={styles.loadMorePlaceholder}>↓ 下拉加载更多</span>
+                )}
+              </div>
             </>
           )}
         </section>

@@ -193,7 +193,28 @@
 
 .loadMore {
   margin-top: 20px;
-  padding: 0 16px;
+  padding: 20px 16px;
+  text-align: center;
+  min-height: 60px;
+  font-size: 14px;
+}
+
+.loadMorePlaceholder {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.loadingIcon {
+  font-size: 16px;
 }
 
 .loadMore button {

@@ -55,9 +55,17 @@
 }
 
 .loading {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 40px;
-  color: #6b7280;
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.loadingIcon {
+  font-size: 18px;
 }
 
 .empty {
