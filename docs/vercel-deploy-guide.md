@@ -98,18 +98,60 @@
 
 ### 2.2 获取项目配置 ID
 
+获取 VERCEL_ORG_ID 和 VERCEL_PROJECT_ID 有两种方法：
+
+#### 方法一：从 Vercel Dashboard 获取
+
 回到 Vercel 设置页面，这次选择 **General** 选项卡：
 
 ![Vercel General 设置](https://picsum.photos/seed/vercel-general/900/500)
 
-在页面中找到 **Deployment** 部分，可以看到以下关键信息：
+**对于个人账户**：
+- **ORG_ID = User ID**：点击右上角头像 → Account Settings → General，底部找到 **User ID**（格式：`usr_xxxxxxxx`）
+- **PROJECT_ID**：选择你的项目 → Settings → 向下滚动找到 **Project ID**（格式：`prj_xxxxxxxx`）
+
+**对于团队账户**：
+- **ORG_ID**：Account Settings → General → Team ID（格式：`team_xxxxxxxx`）
+- **PROJECT_ID**：项目 Settings → Project ID
 
 | 配置项 | 说明 | 示例值 |
 |-------|------|--------|
-| Vercel Org ID | 组织唯一标识 | org_xxxxxxxxxxxxxx |
-| Vercel Project ID | 项目唯一标识 | prj_xxxxxxxxxxxxxx |
+| VERCEL_ORG_ID | 个人账户为 User ID，团队账户为 Team ID | usr_xxxxxxxx / team_xxxxxxxx |
+| VERCEL_PROJECT_ID | 项目唯一标识 | prj_xxxxxxxxxxxxxx |
 
-将这些 ID 记录下来，后续会用到。
+#### 方法二：用 Vercel CLI 获取（推荐）
+
+在项目目录中运行以下命令：
+
+```bash
+# 1. 全局安装 Vercel CLI（如果还没安装）
+npm i -g vercel
+
+# 2. 登录 Vercel
+vercel login
+
+# 3. 进入项目目录并链接
+cd your-project
+vercel link
+
+# 4. 查看项目信息
+cat .vercel/project.json
+```
+
+输出内容如下：
+
+```json
+{
+  "projectId": "prj_xxxxxxxxxxxxxx",
+  "orgId": "usr_xxxxxxxxxxxxxx"
+}
+```
+
+其中：
+- `projectId` 就是 **VERCEL_PROJECT_ID**
+- `orgId` 就是 **VERCEL_ORG_ID**（个人账户为 `usr_` 开头）
+
+将这两个 ID 记录下来备用。
 
 ### 2.3 配置 GitHub Secrets
 
@@ -125,26 +167,19 @@
 
 点击 **New repository secret** 按钮，添加以下三个密钥：
 
-#### 第一个：VERCEL_TOKEN
+#### 添加 Secrets 列表
 
-- **Name**: `VERCEL_TOKEN`
-- **Secret**: 粘贴你刚才创建的 Vercel 访问令牌
-
-![添加 VERCEL_TOKEN](https://picsum.photos/seed/gh-secret-token/700/350)
-
-#### 第二个：VERCEL_ORG_ID
-
-- **Name**: `VERCEL_ORG_ID`
-- **Secret**: 你的 Vercel 组织 ID
-
-#### 第三个：VERCEL_PROJECT_ID
-
-- **Name**: `VERCEL_PROJECT_ID`
-- **Secret**: 你的 Vercel 项目 ID
+| Name | Secret 来源 | 示例值 |
+|------|-----------|--------|
+| `VERCEL_TOKEN` | Vercel Tokens 页面创建 | `xxxxxxxxxxxxxx` |
+| `VERCEL_ORG_ID` | User ID (个人账户) 或 Team ID (团队) | `usr_xxxxxxxx` / `team_xxxxxxxx` |
+| `VERCEL_PROJECT_ID` | 项目 Settings 里的 Project ID | `prj_xxxxxxxx` |
 
 完成后的 Secrets 列表应该类似这样：
 
 ![Secrets 列表](https://picsum.photos/seed/gh-secrets-list/900/300)
+
+> ⚠️ **注意**：如果是个人账户，VERCEL_ORG_ID 就是你的 **User ID**，不是 `org_` 开头，而是 `usr_` 开头！
 
 ---
 
