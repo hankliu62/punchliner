@@ -63,14 +63,14 @@ jobs:
       - name: 添加环境变量到 Vercel
         run: |
           # 添加 ZHIPU_API_KEY
-          echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }}
           
           # 添加 MXNZP_APP_ID
-          echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }}
           
           # 添加 MXNZP_APP_SECRET
-          echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: 部署到 Vercel
         run: |
-          npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }}
