@@ -60,6 +60,10 @@ jobs:
           MXNZP_APP_ID: ${{ secrets.MXNZP_APP_ID }}
           MXNZP_APP_SECRET: ${{ secrets.MXNZP_APP_SECRET }}
 
+      - name: 链接 Vercel 项目
+        run: |
+          npx vercel@latest link --token=${{ secrets.VERCEL_TOKEN }} --yes
+
       - name: 添加环境变量到 Vercel
         run: |
           # 添加 ZHIPU_API_KEY
