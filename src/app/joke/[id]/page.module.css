@@ -1,0 +1,216 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.backBtn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.actionBtn:hover {
+  color: #6366f1;
+}
+
+.heartFilled {
+  color: #ef4444;
+}
+
+.main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.jokeSection {
+  margin-bottom: 24px;
+}
+
+.jokeCard {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.jokeContent {
+  font-size: 17px;
+  line-height: 1.8;
+  color: #1f2937;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.updateTime {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.aiSection {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+}
+
+.aiActions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.aiActionBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 8px;
+  background: #f9fafb;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.aiActionBtn:hover {
+  background: #f3f4f6;
+  border-color: #6366f1;
+}
+
+.aiActionBtnActive {
+  background: #eef2ff;
+  border-color: #6366f1;
+}
+
+.aiActionBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.aiActionIcon {
+  font-size: 24px;
+}
+
+.aiActionLabel {
+  font-size: 12px;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.styleSelector {
+  margin-bottom: 20px;
+}
+
+.resultSection {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.loadingBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.loadingBox p {
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.textResult {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.resultText {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #1f2937;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.imageResult {
+  text-align: center;
+}
+
+.generatedImage {
+  max-width: 100%;
+  border-radius: 12px;
+}
+
+.imageActions {
+  margin-top: 16px;
+}
+
+.loadingContainer {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px;
+}
