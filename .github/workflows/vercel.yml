@@ -1,4 +1,4 @@
-name: Vercel Production Deploy
+name: Vercel 生产环境部署
 
 on:
   push:
@@ -14,26 +14,27 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout code
+      - name: 获取源码
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
+      - name: 安装 pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
+          run_install: false
 
-      - name: Setup Node.js
+      - name: Node 环境版本
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
           cache: 'pnpm'
 
-      - name: Get pnpm store path
+      - name: pnpm 缓存路径
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      - name: pnpm cache
+      - name: 缓存 pnpm 依赖
         uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
@@ -41,10 +42,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install dependencies
+      - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
-      - name: Next.js build cache
+      - name: 缓存 Next.js 构建
         uses: actions/cache@v4
         with:
           path: .next/cache
@@ -52,14 +53,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-
 
-      - name: Build Next.js project
+      - name: 打包
         run: pnpm run build
         env:
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
           MXNZP_APP_ID: ${{ secrets.MXNZP_APP_ID }}
           MXNZP_APP_SECRET: ${{ secrets.MXNZP_APP_SECRET }}
 
-      - name: Deploy to Vercel
+      - name: 部署到 Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
