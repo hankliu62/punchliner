@@ -165,21 +165,29 @@ cat .vercel/project.json
 
 ![GitHub Actions Secrets](https://picsum.photos/seed/gh-secrets/900/450)
 
-点击 **New repository secret** 按钮，添加以下三个密钥：
+点击 **New repository secret** 按钮，添加以下密钥：
 
-#### 添加 Secrets 列表
+#### Vercel 部署所需 Secrets
 
 | Name | Secret 来源 | 示例值 |
 |------|-----------|--------|
-| `VERCEL_TOKEN` | Vercel Tokens 页面创建 | `xxxxxxxxxxxxxx` |
+| `VERCEL_TOKEN` | Vercel Tokens 页面创建 | `wxp_xxxxxxxxxxxxxx` |
 | `VERCEL_ORG_ID` | User ID (个人账户) 或 Team ID (团队) | `usr_xxxxxxxx` / `team_xxxxxxxx` |
 | `VERCEL_PROJECT_ID` | 项目 Settings 里的 Project ID | `prj_xxxxxxxx` |
+
+#### 应用环境变量 Secrets
+
+| Name | Secret 来源 | 说明 |
+|------|-----------|------|
+| `ZHIPU_API_KEY` | 智谱 AI 开放平台 | AI 生成内容所需 |
+| `MXNZP_APP_ID` | MXNZP 开放平台 | 获取段子数据所需 |
+| `MXNZP_APP_SECRET` | MXNZP 开放平台 | 获取段子数据所需 |
 
 完成后的 Secrets 列表应该类似这样：
 
 ![Secrets 列表](https://picsum.photos/seed/gh-secrets-list/900/300)
 
-> ⚠️ **注意**：如果是个人账户，VERCEL_ORG_ID 就是你的 **User ID**，不是 `org_` 开头，而是 `usr_` 开头！
+> ⚠️ **重要说明**：构建时通过 `env:` 配置的环境变量只在 GitHub Actions 构建过程中生效，不会自动同步到 Vercel。Workflow 中使用 `vercel env add` 命令在部署时自动同步这些变量到 Vercel。
 
 ---
 
@@ -380,13 +388,20 @@ jobs:
           MXNZP_APP_ID: ${{ secrets.MXNZP_APP_ID }}
           MXNZP_APP_SECRET: ${{ secrets.MXNZP_APP_SECRET }}
 
+      - name: 添加环境变量到 Vercel
+        run: |
+          # 添加 ZHIPU_API_KEY
+          echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          
+          # 添加 MXNZP_APP_ID
+          echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          
+          # 添加 MXNZP_APP_SECRET
+          echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+
       - name: 部署到 Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+        run: |
+          npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
 ```
 
 ### 4.2 配置详解
@@ -451,7 +466,7 @@ Next.js 构建缓存可以显著缩短构建时间：
 #### 环境变量传递
 
 ```yaml
-- name: Build Next.js project
+- name: 打包
   run: pnpm run build
   env:
     ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
@@ -461,19 +476,34 @@ Next.js 构建缓存可以显著缩短构建时间：
 
 通过 `secrets` 传递敏感环境变量，这些变量会在 GitHub Actions runner 中可用。
 
+#### Vercel 环境变量同步
+
+```yaml
+- name: 添加环境变量到 Vercel
+  run: |
+    # 添加 ZHIPU_API_KEY
+    echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production ...
+    
+    # 添加 MXNZP_APP_ID
+    echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production ...
+    
+    # 添加 MXNZP_APP_SECRET
+    echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production ...
+```
+
+这一步非常重要！它会在每次部署时自动将 GitHub Secrets 中的环境变量同步到 Vercel，确保 Vercel 上的应用能够正确读取这些敏感配置。
+
+> ⚠️ **注意**：构建时配置的环境变量只在 GitHub Actions 构建过程中生效，不会自动同步到 Vercel 生产环境。因此需要使用 `vercel env add` 命令显式同步。
+
 #### Vercel 部署
 
 ```yaml
-- name: Deploy to Vercel
-  uses: amondnet/vercel-action@v25
-  with:
-    vercel-token: ${{ secrets.VERCEL_TOKEN }}
-    vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-    vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-    vercel-args: '--prod'
+- name: 部署到 Vercel
+  run: |
+    npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
 ```
 
-使用 `amondnet/vercel-action` 将构建产物部署到 Vercel 生产环境。
+使用 `npx vercel@latest` 直接调用 Vercel CLI 进行部署，无需全局安装。使用 `--prod` 参数部署到生产环境。
 
 ---
 
@@ -574,10 +604,18 @@ Next.js 构建缓存可以显著缩短构建时间：
 │  阶段六：部署到 Vercel                                                          │
 ├────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                 │
-│   Step 9: Deploy to Vercel                                                     │
+│   Step 8: 同步环境变量到 Vercel                                                 │
+│  ──────┐     │
+│   ┌──────────────────────────────────────────────────────────────── │  npx vercel env add ZHIPU_API_KEY production                        │     │
+│   │  npx vercel env add MXNZP_APP_ID production                        │     │
+│   │  npx vercel env add MXNZP_APP_SECRET production                   │     │
+│   │  ⏱ ~10秒                                                             │     │
+│   └──────────────────────────────────────────────────────────────────────┘     │
+│                                      │                                         │
+│                                      ▼                                         │
+│   Step 9: 部署到 Vercel                                                        │
 │   ┌──────────────────────────────────────────────────────────────────────┐     │
-│   │  uses: amondnet/vercel-action@v25                                   │     │
-│   │  vercel-args: '--prod'                                              │     │
+│   │  npx vercel@latest --prod                                           │     │
 │   │  ⏱ ~20秒                                                             │     │
 │   │                                                                          │
 │   │  ✓ Building...                                                       │     │
@@ -756,9 +794,29 @@ jobs:
 
 | 错误信息 | 原因 | 解决方案 |
 |---------|------|---------|
-| Token is invalid | VERCEL_TOKEN 配置错误 | 检查并重新配置令牌 |
+| Token is invalid | VERCEL_TOKEN 配置错误 | 检查并重新配置令牌，确保是 Legacy Token |
 | Project not found | 项目 ID 配置错误 | 确认 VERCEL_PROJECT_ID 正确 |
 | Permission denied | 令牌权限不足 | 确保令牌具有项目访问权限 |
+
+### 7.3 环境变量在 Vercel 上不生效
+
+**问题**：本地开发正常，但部署到 Vercel 后获取数据失败
+
+**原因**：GitHub Actions 构建时配置的环境变量（如 `ZHIPU_API_KEY`、`MXNZP_APP_ID` 等）只在构建过程中有效，不会自动同步到 Vercel。
+
+**解决方案**：
+
+本教程采用的方法是在 workflow 中使用 `vercel env add` 命令自动同步：
+
+```yaml
+- name: 添加环境变量到 Vercel
+  run: |
+    echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production ...
+    echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production ...
+    echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production ...
+```
+
+或者手动在 Vercel Dashboard → 项目 Settings → Environment Variables 中添加。
 
 ### 7.3 缓存未生效
 
@@ -778,9 +836,9 @@ jobs:
 
 ### 核心要点回顾
 
-1. **Vercel 凭证配置**：创建 Token、获取 Org ID 和 Project ID，配置 GitHub Secrets
+1. **Vercel 凭证配置**：创建 Legacy Token、获取 User ID 和 Project ID，配置 GitHub Secrets
 2. **工作流配置**：使用 pnpm、双层缓存、Next.js 构建缓存优化构建速度
-3. **环境变量传递**：通过 secrets 传递敏感环境变量到构建过程
+3. **环境变量传递**：通过 `vercel env add` 命令自动同步环境变量到 Vercel
 4. **CI 分离**：推荐创建独立的 CI 工作流进行代码质量检查
 
 ### 性能数据
