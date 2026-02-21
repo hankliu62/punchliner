@@ -13,8 +13,12 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": "biome lint --write",
-    "*.{json,css,scss}": "biome format --write"
+    "*.{js,jsx,ts,tsx}": [
+      "biome lint --write"
+    ],
+    "*.{json,css,scss}": [
+      "biome format --write"
+    ]
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
