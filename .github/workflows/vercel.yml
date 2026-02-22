@@ -68,21 +68,21 @@ jobs:
         run: |
           # 获取当前已存在的环境变量列表
           EXISTING_VARS=$(npx vercel@latest env list production --token=${{ secrets.VERCEL_TOKEN }} | awk 'NR>3 {print $1}' | grep -v '^$')
-          
+
           # 添加 ZHIPU_API_KEY（如果不存在）
           if ! echo "$EXISTING_VARS" | grep -q "ZHIPU_API_KEY"; then
             echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }}
           else
             echo "ZHIPU_API_KEY 已存在，跳过"
           fi
-          
+
           # 添加 MXNZP_APP_ID（如果不存在）
           if ! echo "$EXISTING_VARS" | grep -q "MXNZP_APP_ID"; then
             echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }}
           else
             echo "MXNZP_APP_ID 已存在，跳过"
           fi
-          
+
           # 添加 MXNZP_APP_SECRET（如果不存在）
           if ! echo "$EXISTING_VARS" | grep -q "MXNZP_APP_SECRET"; then
             echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }}
