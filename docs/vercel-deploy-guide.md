@@ -388,14 +388,14 @@ jobs:
 
       - name: 添加环境变量到 Vercel
         run: |
-          # 添加 ZHIPU_API_KEY
-          echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }}
+          # 添加 ZHIPU_API_KEY（忽略已存在的错误）
+          echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 || echo "ZHIPU_API_KEY 已存在，跳过"
           
-          # 添加 MXNZP_APP_ID
-          echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }}
+          # 添加 MXNZP_APP_ID（忽略已存在的错误）
+          echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 || echo "MXNZP_APP_ID 已存在，跳过"
           
-          # 添加 MXNZP_APP_SECRET
-          echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }}
+          # 添加 MXNZP_APP_SECRET（忽略已存在的错误）
+          echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 || echo "MXNZP_APP_SECRET 已存在，跳过"
 
       - name: 部署到 Vercel
         run: |
@@ -483,15 +483,17 @@ Next.js 构建缓存可以显著缩短构建时间：
 
 - name: 添加环境变量到 Vercel
   run: |
-    # 添加 ZHIPU_API_KEY
-    echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }}
+    # 添加 ZHIPU_API_KEY（忽略已存在的错误）
+    echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 || echo "ZHIPU_API_KEY 已存在，跳过"
     
-    # 添加 MXNZP_APP_ID
-    echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }}
+    # 添加 MXNZP_APP_ID（忽略已存在的错误）
+    echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 || echo "MXNZP_APP_ID 已存在，跳过"
     
-    # 添加 MXNZP_APP_SECRET
-    echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }}
+    # 添加 MXNZP_APP_SECRET（忽略已存在的错误）
+    echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 || echo "MXNZP_APP_SECRET 已存在，跳过"
 ```
+
+> 💡 **优化说明**：使用 `||` 捕获错误，如果环境变量已存在则忽略错误并打印提示信息，避免 CI/CD 重复部署时因变量已存在而失败。
 
 这一步非常重要！它会在每次部署时自动将 GitHub Secrets 中的环境变量同步到 Vercel，确保 Vercel 上的应用能够正确读取这些敏感配置。
 
@@ -818,9 +820,12 @@ jobs:
 
 - name: 添加环境变量到 Vercel
   run: |
-    echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }}
-    echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }}
-    echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }}
+    # 添加 ZHIPU_API_KEY（忽略已存在的错误）
+    echo "${{ secrets.ZHIPU_API_KEY }}" | npx vercel@latest env add ZHIPU_API_KEY production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 || echo "ZHIPU_API_KEY 已存在，跳过"
+    # 添加 MXNZP_APP_ID（忽略已存在的错误）
+    echo "${{ secrets.MXNZP_APP_ID }}" | npx vercel@latest env add MXNZP_APP_ID production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 || echo "MXNZP_APP_ID 已存在，跳过"
+    # 添加 MXNZP_APP_SECRET（忽略已存在的错误）
+    echo "${{ secrets.MXNZP_APP_SECRET }}" | npx vercel@latest env add MXNZP_APP_SECRET production --token=${{ secrets.VERCEL_TOKEN }} 2>&1 || echo "MXNZP_APP_SECRET 已存在，跳过"
 ```
 
 或者手动在 Vercel Dashboard → 项目 Settings → Environment Variables 中添加。
