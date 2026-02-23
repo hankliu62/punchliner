@@ -343,9 +343,9 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         return
       }
 
-      // 设置画布大小为 16:9 比例 (800x450)
-      const width = 800
-      const height = 450
+      // 设置画布大小为 2:3 比例 (600x900)
+      const width = 600
+      const height = 900
       canvas.width = width
       canvas.height = height
 
@@ -359,66 +359,100 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         ctx.fillStyle = '#ffffff'
         ctx.fillRect(0, 0, width, height)
 
-        // 绘制AI图片（上半部分，约55%高度）
-        const imageHeight = Math.floor(height * 0.55)
-        ctx.drawImage(img, 0, 0, width, imageHeight)
+        // 上部分：AI图片 1:1 正方形 (宽度占满，高度根据宽度自适应)
+        const imageSize = width
+        ctx.drawImage(img, 0, 0, imageSize, imageSize)
 
-        // 绘制下半部分背景
-        ctx.fillStyle = '#f5f5f5'
-        ctx.fillRect(0, imageHeight, width, height - imageHeight)
+        // 下部分背景
+        ctx.fillStyle = '#f8f8f8'
+        ctx.fillRect(0, imageSize, width, height - imageSize)
 
         // 绘制分隔线
         ctx.strokeStyle = '#e0e0e0'
-        ctx.lineWidth = 1
+        ctx.lineWidth = 2
         ctx.beginPath()
-        ctx.moveTo(0, imageHeight)
-        ctx.lineTo(width, imageHeight)
+        ctx.moveTo(0, imageSize)
+        ctx.lineTo(width, imageSize)
         ctx.stroke()
 
-        // 绘制文字内容（左半部分）
+        // 准备文字内容 - 从最后开始显示，显示最后3行
         ctx.fillStyle = '#333333'
-        ctx.font = 'bold 20px "PingFang SC", "Microsoft YaHei", sans-serif'
+        ctx.font = 'bold 22px "PingFang SC", "Microsoft YaHei", sans-serif'
 
-        // 文字截断处理，最多显示3行
         const maxLines = 3
-        const maxCharsPerLine = 20
-        const lines: string[] = []
+        const maxCharsPerLine = 18
         const allChars = content.split('')
+        const totalChars = allChars.length
 
-        for (let i = 0; i < maxLines; i++) {
-          const start = i * maxCharsPerLine
-          const line = allChars.slice(start, start + maxCharsPerLine).join('')
-          if (line) {
-            lines.push(line + (start + maxCharsPerLine < allChars.length ? '...' : ''))
+        // 计算需要显示的行数
+        let lines: string[] = []
+        if (totalChars <= maxCharsPerLine) {
+          // 内容只有一行，直接显示
+          lines = [content]
+        } else {
+          // 从最后开始计算显示的行数
+          const startIndex = Math.max(0, totalChars - maxCharsPerLine * maxLines)
+          const displayChars = allChars.slice(startIndex)
+          const displayText = displayChars.join('')
+
+          // 分割成多行
+          for (let i = 0; i < maxLines; i++) {
+            const start = i * maxCharsPerLine
+            const line = displayText.slice(start, start + maxCharsPerLine)
+            if (line) {
+              // 只在非最后一行或完整显示时添加省略号
+              const needsEllipsis =
+                startIndex > 0 && i === maxLines - 1 && start + maxCharsPerLine < totalChars
+              lines.push(line + (needsEllipsis ? '...' : ''))
+            }
           }
         }
 
-        const textX = 20
-        const textY = imageHeight + 40
-        const lineHeight = 28
+        // 二维码区域
+        const qrSize = 140
+        const qrX = width - qrSize - 20
+        const qrY = imageSize + 40
 
-        lines.forEach((line, index) => {
-          ctx.fillText(line, textX, textY + index * lineHeight)
-        })
-
-        // 绘制二维码（右下角）
+        // 加载二维码
         const qrImg = new window.Image()
         qrImg.crossOrigin = 'anonymous'
         qrImg.onload = () => {
-          const qrSize = 100
-          const qrX = width - qrSize - 20
-          const qrY = height - qrSize - 20
+          // 计算文字区域
+          const textX = 20
+          const textMaxWidth = qrX - textX - 24 // 内容和二维码之间24px间隔
+
+          // 计算文字垂直居中
+          const lineHeight = 32
+          const totalTextHeight = lines.length * lineHeight
+          const qrContentHeight = height - imageSize - 40
+          const availableHeight = qrContentHeight
+
+          // 文字区域高度
+          const textAreaHeight = Math.min(totalTextHeight + 20, availableHeight - qrSize - 20)
+
+          // 如果内容比二维码区域短，居中显示
+          const isShortContent = totalTextHeight < qrSize
+          const textStartY = isShortContent
+            ? imageSize + (availableHeight - totalTextHeight) / 2
+            : qrY + qrSize + 10
+
+          // 绘制文字
+          lines.forEach((line, index) => {
+            ctx.fillText(line, textX, textStartY + index * lineHeight)
+          })
+
+          // 绘制二维码
           ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
 
           // 绘制"扫码看更多"文字
           ctx.fillStyle = '#999999'
           ctx.font = '12px "PingFang SC", "Microsoft YaHei", sans-serif'
-          ctx.fillText('扫码看更多', qrX, qrY - 8)
+          ctx.fillText('扫码看更多', qrX, qrY + qrSize + 8)
 
           resolve(canvas.toDataURL('image/png'))
         }
         qrImg.onerror = () => {
-          // 二维码加载失败，只返回图片部分
+          // 二维码加载失败，只返回上半部分
           resolve(canvas.toDataURL('image/png'))
         }
         qrImg.src = qrCodeUrl
