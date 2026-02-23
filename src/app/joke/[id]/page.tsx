@@ -42,10 +42,12 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // 优先从加密参数获取，兼容旧版URL参数
+  // 优先从短ID参数获取（新的服务端存储方式）
+  const shareId = searchParams.get('s')
+  // 兼容旧版Base64加密参数
   const encryptedData = getContentFromUrl(searchParams)
-  const content = encryptedData?.content || searchParams.get('content') || ''
-  const updateTime = encryptedData?.updateTime || searchParams.get('time') || ''
+  const content = searchParams.get('content') || '' // 旧参数，保留兼容
+  const updateTime = searchParams.get('time') || '' // 旧参数，保留兼容
 
   const [joke, setJoke] = useState<Joke | null>(null)
   const [isCollected, setIsCollected] = useState(false)
@@ -63,13 +65,36 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [videoProgress, setVideoProgress] = useState(0)
 
+  // 从服务端获取分享内容
   useEffect(() => {
-    if (content) {
-      setJoke({ id, content, updateTime })
-      const collects = getCollects()
-      setIsCollected(collects.some((item) => item.id === id))
+    const fetchContent = async () => {
+      if (shareId) {
+        try {
+          const res = await fetch(`/api/ai/share-image?s=${shareId}`)
+          const data = await res.json()
+          if (data.code === 1 && data.data) {
+            setJoke({ id, content: data.data.content, updateTime: data.data.updateTime })
+            const collects = getCollects()
+            setIsCollected(collects.some((item) => item.id === id))
+            return
+          }
+        } catch (error) {
+          console.error('Failed to fetch share content:', error)
+        }
+      }
+
+      // 旧版逻辑：从URL参数获取
+      if (content || encryptedData?.content) {
+        const finalContent = encryptedData?.content || content
+        const finalTime = encryptedData?.updateTime || updateTime
+        setJoke({ id, content: finalContent, updateTime: finalTime })
+        const collects = getCollects()
+        setIsCollected(collects.some((item) => item.id === id))
+      }
     }
-  }, [id, content, updateTime])
+
+    fetchContent()
+  }, [shareId, id, content, updateTime, encryptedData])
 
   const handleCollect = () => {
     if (!joke) return
