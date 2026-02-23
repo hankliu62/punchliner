@@ -59,6 +59,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [generatingShareImage, setGeneratingShareImage] = useState(false)
+  const [shareImageError, setShareImageError] = useState<string | null>(null)
   // 动画视频相关状态
   const [generatingVideo, setGeneratingVideo] = useState(false)
   const [_videoTaskId, setVideoTaskId] = useState<string | null>(null)
@@ -224,10 +225,12 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         )
         setShareImageUrl(mergedImageUrl)
       } else {
+        setShareImageError(data.msg || '分享图片生成失败')
         toast.error(data.msg || '分享图片生成失败')
       }
     } catch (error) {
       console.error('Generate share image error:', error)
+      setShareImageError('网络错误，请稍后重试')
       toast.error('分享图片生成失败')
     } finally {
       setGeneratingShareImage(false)
@@ -687,6 +690,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
           setShareModalVisible(false)
           setShareImageUrl(null)
           setShareUrl(null)
+          setShareImageError(null)
           setVideoUrl(null)
           setVideoTaskId(null)
           setVideoProgress(0)
@@ -761,37 +765,63 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
                   </Button>
                 </div>
               </div>
+            ) : shareImageError ? (
+              <div className={styles.errorWrapper}>
+                <div className={styles.errorIconWrapper}>
+                  <div className={styles.errorCircle}>
+                    <span className={styles.errorX}>×</span>
+                  </div>
+                </div>
+                <p className={styles.errorTitle}>生成失败</p>
+                <p className={styles.errorMessage}>{shareImageError}</p>
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<ShareAltOutlined />}
+                  onClick={() => {
+                    setShareImageError(null)
+                    handleGenerateShareImage()
+                  }}
+                  block
+                >
+                  重试
+                </Button>
+              </div>
             ) : null}
           </div>
 
-          {/* 初始状态按钮（当没有生成任何内容时显示） */}
-          {!generatingShareImage && !shareImageUrl && !generatingVideo && !videoUrl && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
-              <Button
-                type="primary"
-                size="large"
-                icon={<ShareAltOutlined />}
-                onClick={handleGenerateShareImage}
-                block
-              >
-                生成分享图片
-              </Button>
-              <Button size="large" icon={<CopyOutlined />} onClick={handleCopyLink} block>
-                复制链接
-              </Button>
-              <Button
-                size="large"
-                icon={<LoadingOutlined spin={generatingVideo} />}
-                onClick={handleGenerateVideo}
-                block
-              >
-                生成动画视频 (Beta)
-              </Button>
-              <p style={{ fontSize: 12, color: '#999', marginTop: 8 }}>
-                动画视频需要配置 PIKA_API_KEY
-              </p>
-            </div>
-          )}
+          {/* 初始状态按钮（当没有生成任何内容且没有错误时显示） */}
+          {!generatingShareImage &&
+            !shareImageUrl &&
+            !generatingVideo &&
+            !videoUrl &&
+            !shareImageError && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<ShareAltOutlined />}
+                  onClick={handleGenerateShareImage}
+                  block
+                >
+                  生成分享图片
+                </Button>
+                <Button size="large" icon={<CopyOutlined />} onClick={handleCopyLink} block>
+                  复制链接
+                </Button>
+                <Button
+                  size="large"
+                  icon={<LoadingOutlined spin={generatingVideo} />}
+                  onClick={handleGenerateVideo}
+                  block
+                >
+                  生成动画视频 (Beta)
+                </Button>
+                <p style={{ fontSize: 12, color: '#999', marginTop: 8 }}>
+                  动画视频需要配置 PIKA_API_KEY
+                </p>
+              </div>
+            )}
         </div>
       </Modal>
     </div>
