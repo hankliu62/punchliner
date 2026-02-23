@@ -53,6 +53,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
   const [activeAction, setActiveAction] = useState<AIActionType | null>(null)
   const [aiResult, setAiResult] = useState<string | null>(null)
   const [aiImageUrl, setAiImageUrl] = useState<string | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [rewriteStyle, setRewriteStyle] = useState<string>('冷幽默')
   const [shareModalVisible, setShareModalVisible] = useState(false)
@@ -132,6 +133,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
     setLoading(true)
     setAiResult(null)
     setAiImageUrl(null)
+    setAiError(null)
 
     try {
       if (action.type === 'image') {
@@ -144,6 +146,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         if (data.code === 1 && data.data.url) {
           setAiImageUrl(data.data.url)
         } else {
+          setAiError(data.msg || '图片生成失败')
           toast.error(data.msg || '图片生成失败')
         }
       } else {
@@ -160,11 +163,13 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         if (data.code === 1 && data.data) {
           setAiResult(data.data)
         } else {
+          setAiError(data.msg || 'AI 生成失败')
           toast.error(data.msg || 'AI 生成失败')
         }
       }
     } catch (error) {
       console.error('AI action error:', error)
+      setAiError('网络错误，请稍后重试')
       toast.error('AI 生成失败，请重试')
     } finally {
       setLoading(false)
@@ -638,7 +643,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
             </div>
           )}
 
-          {(loading || aiResult || aiImageUrl) && (
+          {(loading || aiResult || aiImageUrl || aiError) && (
             <div className={styles.resultSection}>
               {loading ? (
                 <div className={styles.loadingWrapper}>
@@ -676,6 +681,28 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
                   >
                     复制文案
                   </Button>
+                </div>
+              ) : aiError ? (
+                <div className={styles.errorWrapper}>
+                  <div className={styles.errorIconWrapper}>
+                    <div className={styles.errorCircle}>
+                      <span className={styles.errorX}>×</span>
+                    </div>
+                  </div>
+                  <p className={styles.errorTitle}>生成失败</p>
+                  <p className={styles.errorMessage}>{aiError}</p>
+                  {activeAction && (
+                    <Button
+                      type="primary"
+                      onClick={() => {
+                        const action = AI_ACTIONS.find((a) => a.type === activeAction)
+                        if (action) handleAIAction(action)
+                      }}
+                      block
+                    >
+                      重试
+                    </Button>
+                  )}
                 </div>
               ) : null}
             </div>
