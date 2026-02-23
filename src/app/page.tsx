@@ -318,16 +318,26 @@ export default function HomePage() {
               </div>
               {/* 滚动加载更多触发器 */}
               <div className={styles.loadMore}>
-                {loadingMore && (
-                  <div className={styles.loadingContainer}>
-                    <LoadingOutlined className={styles.loadingIcon} spin />
-                    <span>加载中...</span>
+                {loadingMore ? (
+                  <div className={styles.loadingWrapper}>
+                    <div className={styles.loadingIconWrapper}>
+                      <div className={styles.loadingOrbit}></div>
+                      <LoadingOutlined spin className={styles.loadingIcon} />
+                    </div>
+                    <span className={styles.loadingText}>正在加载更多...</span>
                   </div>
-                )}
-                {!hasMore && jokes.length > 0 && <span>没有更多了</span>}
-                {hasMore && !loadingMore && (
-                  <span className={styles.loadMorePlaceholder}>↓ 下拉加载更多</span>
-                )}
+                ) : !hasMore && jokes.length > 0 ? (
+                  <div className={styles.noMore}>
+                    <span className={styles.noMoreLine}></span>
+                    <span className={styles.noMoreText}>没有更多了</span>
+                    <span className={styles.noMoreLine}></span>
+                  </div>
+                ) : jokes.length > 0 ? (
+                  <button type="button" className={styles.loadMoreBtn} onClick={handleLoadMore}>
+                    <span className={styles.loadMoreIcon}>↓</span>
+                    <span className={styles.loadMoreText}>加载更多</span>
+                  </button>
+                ) : null}
               </div>
             </>
           )}
