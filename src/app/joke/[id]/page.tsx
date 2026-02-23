@@ -347,9 +347,11 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
       canvas.width = width
       canvas.height = height
 
+      // 使用代理URL加载图片，解决CORS问题
+      const proxyImageUrl = `/api/proxy/image?url=${encodeURIComponent(imageUrl)}`
+
       // 加载AI生成的图片
       const img = new window.Image()
-      img.crossOrigin = 'anonymous'
       img.onload = async () => {
         // 绘制背景
         ctx.fillStyle = '#ffffff'
@@ -422,7 +424,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
       img.onerror = () => {
         reject(new Error('Failed to load image'))
       }
-      img.src = imageUrl
+      img.src = proxyImageUrl
     })
   }
 
