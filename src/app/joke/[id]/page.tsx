@@ -13,7 +13,7 @@ import {
 } from '@ant-design/icons'
 import { Image as AntImage, Button, Modal, Segmented, Skeleton } from 'antd'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { generateShareUrl, getContentFromUrl } from '@/lib/crypto'
 import { getRoutePrefix } from '@/lib/route'
@@ -45,7 +45,6 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
   // 优先从短ID参数获取（新的服务端存储方式）
   const shareId = searchParams.get('s')
   // 兼容旧版Base64加密参数
-  const encryptedData = getContentFromUrl(searchParams)
   const content = searchParams.get('content') || '' // 旧参数，保留兼容
   const updateTime = searchParams.get('time') || '' // 旧参数，保留兼容
 
@@ -66,8 +65,15 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [videoProgress, setVideoProgress] = useState(0)
 
+  // 使用 ref 避免无限循环
+  const initialized = useRef(false)
+
   // 从服务端获取分享内容
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 只需要在shareId或id变化时执行一次
   useEffect(() => {
+    if (initialized.current) return
+    initialized.current = true
+
     const fetchContent = async () => {
       if (shareId) {
         try {
@@ -85,6 +91,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
       }
 
       // 旧版逻辑：从URL参数获取
+      const encryptedData = getContentFromUrl(searchParams)
       if (content || encryptedData?.content) {
         const finalContent = encryptedData?.content || content
         const finalTime = encryptedData?.updateTime || updateTime
@@ -95,7 +102,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
     }
 
     fetchContent()
-  }, [shareId, id, content, updateTime, encryptedData])
+  }, [shareId, id]) // 只依赖 shareId 和 id
 
   const handleCollect = () => {
     if (!joke) return
@@ -229,11 +236,12 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
 
   // 复制链接
   const handleCopyLink = async () => {
+    if (!joke) return
     // 优先使用服务端生成的短链接
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
     const url = shareUrl
       ? baseUrl + shareUrl
-      : generateShareUrl(joke!.id, joke!.content, joke!.updateTime, baseUrl + getRoutePrefix())
+      : generateShareUrl(joke.id, joke.content, joke.updateTime, baseUrl + getRoutePrefix())
     try {
       await navigator.clipboard.writeText(url)
       toast.success('链接已复制')
@@ -459,9 +467,6 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
           const totalTextHeight = lines.length * lineHeight
           const qrContentHeight = height - imageSize - 24
           const availableHeight = qrContentHeight
-
-          // 文字区域高度
-          const textAreaHeight = Math.min(totalTextHeight + 20, availableHeight - qrSize - 20)
 
           // 如果内容比二维码区域短，居中显示
           const isShortContent = totalTextHeight < qrSize
