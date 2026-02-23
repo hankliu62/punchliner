@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { generateShareUrl } from '@/lib/crypto'
 import { getRoutePrefix } from '@/lib/route'
 import type { CollectItem, Joke } from '@/types'
 import styles from './page.module.css'
@@ -104,7 +105,7 @@ export default function HomePage() {
     }
   }, [])
 
-  const fetchJokes = useCallback(async (pageNum: number, isLoadMore: boolean = false) => {
+  const fetchJokes = useCallback(async (pageNum: number, _isLoadMore: boolean = false) => {
     try {
       const res = await fetch(`/api/jokes/list?page=${pageNum}`)
       const data = await res.json()
@@ -232,7 +233,12 @@ export default function HomePage() {
             </div>
           ) : dailyJoke ? (
             <Link
-              href={`/joke/${dailyJoke.id}?content=${encodeURIComponent(dailyJoke.content)}&time=${dailyJoke.updateTime}`}
+              href={generateShareUrl(
+                dailyJoke.id,
+                dailyJoke.content,
+                dailyJoke.updateTime,
+                getRoutePrefix()
+              )}
               className={styles.dailyCard}
             >
               <p className={styles.dailyContent}>{dailyJoke.content}</p>
@@ -275,7 +281,12 @@ export default function HomePage() {
                 {jokes.map((joke) => (
                   <Link
                     key={joke.id}
-                    href={`/joke/${joke.id}?content=${encodeURIComponent(joke.content)}&time=${joke.updateTime}`}
+                    href={generateShareUrl(
+                      joke.id,
+                      joke.content,
+                      joke.updateTime,
+                      getRoutePrefix()
+                    )}
                     className={styles.jokeCard}
                   >
                     <p className={styles.jokeContent}>{joke.content}</p>
