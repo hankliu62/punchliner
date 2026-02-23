@@ -28,7 +28,7 @@ if (typeof setInterval !== 'undefined') {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { content, url, id, updateTime } = body
+    const { content, id, updateTime } = body
 
     if (!content) {
       return NextResponse.json({ code: 0, msg: '参数错误', data: null })
@@ -42,22 +42,35 @@ export async function POST(request: NextRequest) {
       createdAt: Date.now(),
     })
 
-    // 构建短链接
-    const shortUrl = url
-      ? url.replace(/data=[^&]+/, `s=${shareId}`)
-      : `/joke/${id || 'shared'}?s=${shareId}`
+    // 使用纯短链接，不使用传入的URL
+    const shortUrl = `/joke/${id || 'shared'}?s=${shareId}`
 
     // 1. 调用智谱 AI 生成配图
-    const imagePrompt = await generateAIContent('image', content)
-    const imageUrl = await generateImage(imagePrompt)
+    let imageUrl: string | null = null
+    let retryCount = 0
+    const maxRetries = 3
+
+    while (retryCount < maxRetries) {
+      try {
+        const imagePrompt = await generateAIContent('image', content)
+        imageUrl = await generateImage(imagePrompt)
+        if (imageUrl) break
+      } catch (error) {
+        console.error(`Image generation attempt ${retryCount + 1} failed:`, error)
+        retryCount++
+        if (retryCount < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, 1000 * retryCount))
+        }
+      }
+    }
 
     if (!imageUrl) {
-      return NextResponse.json({ code: 0, msg: '图片生成失败', data: null })
+      return NextResponse.json({ code: 0, msg: '图片生成失败，请稍后重试', data: null })
     }
 
     // 2. 生成二维码（使用短链接）
     const QRCode = (await import('qrcode')).default
-    const qrCodeDataUrl = await QRCode.toDataURL(shortUrl || 'https://punchliner.vercel.app', {
+    const qrCodeDataUrl = await QRCode.toDataURL(shortUrl, {
       width: 200,
       margin: 2,
       errorCorrectionLevel: 'L',
@@ -74,7 +87,6 @@ export async function POST(request: NextRequest) {
       data: {
         imageUrl,
         qrCodeUrl: qrCodeDataUrl,
-        prompt: imagePrompt,
         shareUrl: shortUrl,
       },
     })

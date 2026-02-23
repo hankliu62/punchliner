@@ -58,6 +58,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
   const [rewriteStyle, setRewriteStyle] = useState<string>('冷幽默')
   const [shareModalVisible, setShareModalVisible] = useState(false)
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [generatingShareImage, setGeneratingShareImage] = useState(false)
   // 动画视频相关状态
   const [generatingVideo, setGeneratingVideo] = useState(false)
@@ -198,11 +199,16 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content: joke.content,
-          url: generateShareUrl(joke.id, joke.content, joke.updateTime, getRoutePrefix()),
+          id: joke.id,
+          updateTime: joke.updateTime,
         }),
       })
       const data = await res.json()
       if (data.code === 1 && data.data.imageUrl && data.data.qrCodeUrl) {
+        // 保存分享链接
+        if (data.data.shareUrl) {
+          setShareUrl(data.data.shareUrl)
+        }
         // 使用 Canvas 合成分享图片
         const mergedImageUrl = await generateShareImageCanvas(
           data.data.imageUrl,
@@ -223,10 +229,11 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
 
   // 复制链接
   const handleCopyLink = async () => {
-    if (!joke) return
-    // 使用完整URL，包含域名
+    // 优先使用服务端生成的短链接
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-    const url = generateShareUrl(joke.id, joke.content, joke.updateTime, baseUrl + getRoutePrefix())
+    const url = shareUrl
+      ? baseUrl + shareUrl
+      : generateShareUrl(joke!.id, joke!.content, joke!.updateTime, baseUrl + getRoutePrefix())
     try {
       await navigator.clipboard.writeText(url)
       toast.success('链接已复制')
@@ -674,6 +681,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         onCancel={() => {
           setShareModalVisible(false)
           setShareImageUrl(null)
+          setShareUrl(null)
           setVideoUrl(null)
           setVideoTaskId(null)
           setVideoProgress(0)
