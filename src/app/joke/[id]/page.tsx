@@ -9,6 +9,7 @@ import {
   LinkOutlined,
   LoadingOutlined,
   ShareAltOutlined,
+  VideoCameraOutlined,
 } from '@ant-design/icons'
 import { Image as AntImage, Button, Modal, Segmented, Skeleton } from 'antd'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -526,7 +527,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
             aria-label="生成视频"
             title="生成视频"
           >
-            <LoadingOutlined spin={generatingVideo} />
+            {generatingVideo ? <LoadingOutlined spin /> : <VideoCameraOutlined />}
           </button>
           <button
             type="button"

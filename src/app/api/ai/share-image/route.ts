@@ -23,10 +23,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ code: 0, msg: '图片生成失败', data: null })
     }
 
-    // 2. 生成二维码
+    // 2. 生成二维码（优化参数使二维码更简单）
     const qrCodeDataUrl = await QRCode.toDataURL(shareUrl || 'https://punchliner.vercel.app', {
       width: 200,
       margin: 2,
+      errorCorrectionLevel: 'L', // 低容错级别，二维码更简单
+      version: 5, // 较低版本，二维码更简单
       color: {
         dark: '#000000',
         light: '#ffffff',
