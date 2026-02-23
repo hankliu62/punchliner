@@ -197,7 +197,9 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
   // 复制链接
   const handleCopyLink = async () => {
     if (!joke) return
-    const url = generateShareUrl(joke.id, joke.content, joke.updateTime, getRoutePrefix())
+    // 使用完整URL，包含域名
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    const url = generateShareUrl(joke.id, joke.content, joke.updateTime, baseUrl + getRoutePrefix())
     try {
       await navigator.clipboard.writeText(url)
       toast.success('链接已复制')
