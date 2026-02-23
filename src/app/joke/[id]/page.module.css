@@ -165,6 +165,7 @@
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid #e5e7eb;
+  min-height: 200px;
 }
 
 .loadingBox {
@@ -174,6 +175,7 @@
   justify-content: center;
   padding: 40px;
   color: #6b7280;
+  min-height: 160px;
 }
 
 .loadingBox p {
@@ -198,6 +200,7 @@
 
 .imageResult {
   text-align: center;
+  min-height: 160px;
 }
 
 .generatedImage {

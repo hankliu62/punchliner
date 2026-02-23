@@ -462,8 +462,18 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
             onClick={() => setShareModalVisible(true)}
             className={styles.actionBtn}
             aria-label="分享"
+            title="分享"
           >
             <ShareAltOutlined />
+          </button>
+          <button
+            type="button"
+            onClick={() => setShareModalVisible(true)}
+            className={styles.actionBtn}
+            aria-label="生成视频"
+            title="生成视频"
+          >
+            <LoadingOutlined spin={generatingVideo} />
           </button>
           <button
             type="button"
@@ -585,56 +595,67 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         footer={null}
         title="分享"
         centered
-        width={400}
+        width={420}
       >
-        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-          {generatingShareImage ? (
-            <div>
-              <LoadingOutlined spin style={{ fontSize: 32 }} />
-              <p style={{ marginTop: 16 }}>正在生成分享图片...</p>
-            </div>
-          ) : shareImageUrl ? (
-            <div>
-              <AntImage
-                src={shareImageUrl}
-                alt="分享图片"
-                style={{ maxWidth: '100%', borderRadius: 8 }}
-              />
-              <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
-                <Button icon={<DownloadOutlined />} onClick={handleSaveShareImage}>
-                  保存图片
-                </Button>
-                <Button type="primary" onClick={handleCopyLink}>
-                  复制链接
-                </Button>
+        <div style={{ textAlign: 'center', padding: '20px 0', minHeight: 300 }}>
+          {/* 占位符：保持最小高度，避免高度变化 */}
+          <div style={{ minHeight: 200 }}>
+            {generatingShareImage ? (
+              <div>
+                <LoadingOutlined spin style={{ fontSize: 32 }} />
+                <p style={{ marginTop: 16 }}>正在生成分享图片...</p>
               </div>
-            </div>
-          ) : generatingVideo ? (
-            <div>
-              <LoadingOutlined spin style={{ fontSize: 32 }} />
-              <p style={{ marginTop: 16 }}>正在生成动画视频...</p>
-              <p style={{ marginTop: 8, color: '#999' }}>
-                进度: {Math.round(videoProgress * 100)}%
-              </p>
-              <p style={{ marginTop: 8, fontSize: 12, color: '#ccc' }}>
-                请耐心等待，可能需要30-60秒
-              </p>
-            </div>
-          ) : videoUrl ? (
-            <div>
-              {/* biome-ignore lint/a11y/useMediaCaption: 视频不需要字幕 */}
-              <video src={videoUrl} controls style={{ width: '100%', borderRadius: 8 }} />
-              <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
-                <Button icon={<DownloadOutlined />} onClick={handleSaveVideo}>
-                  保存视频
-                </Button>
-                <Button type="primary" onClick={handleCopyLink}>
-                  复制链接
-                </Button>
+            ) : shareImageUrl ? (
+              <div>
+                <AntImage
+                  src={shareImageUrl}
+                  alt="分享图片"
+                  style={{ maxWidth: '100%', borderRadius: 8, minHeight: 180 }}
+                  preview={false}
+                />
+                <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
+                  <Button icon={<DownloadOutlined />} onClick={handleSaveShareImage}>
+                    保存图片
+                  </Button>
+                  <Button type="primary" onClick={handleCopyLink}>
+                    复制链接
+                  </Button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            ) : generatingVideo ? (
+              <div>
+                <LoadingOutlined spin style={{ fontSize: 32 }} />
+                <p style={{ marginTop: 16 }}>正在生成动画视频...</p>
+                <p style={{ marginTop: 8, color: '#999' }}>
+                  进度: {Math.round(videoProgress * 100)}%
+                </p>
+                <p style={{ marginTop: 8, fontSize: 12, color: '#ccc' }}>
+                  请耐心等待，可能需要30-60秒
+                </p>
+              </div>
+            ) : videoUrl ? (
+              <div>
+                {/* biome-ignore lint/a11y/useMediaCaption: 视频不需要字幕 */}
+                <video
+                  src={videoUrl}
+                  controls
+                  style={{ width: '100%', borderRadius: 8, minHeight: 180 }}
+                />
+                <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
+                  <Button icon={<DownloadOutlined />} onClick={handleSaveVideo}>
+                    保存视频
+                  </Button>
+                  <Button type="primary" onClick={handleCopyLink}>
+                    复制链接
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {/* 初始状态按钮（当没有生成任何内容时显示） */}
+          {!generatingShareImage && !shareImageUrl && !generatingVideo && !videoUrl && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
               <Button
                 type="primary"
                 size="large"
@@ -652,7 +673,6 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
                 icon={<LoadingOutlined spin={generatingVideo} />}
                 onClick={handleGenerateVideo}
                 block
-                disabled={generatingVideo}
               >
                 生成动画视频 (Beta)
               </Button>
