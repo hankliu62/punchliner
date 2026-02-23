@@ -6,6 +6,7 @@ import {
   DownloadOutlined,
   HeartFilled,
   HeartOutlined,
+  LinkOutlined,
   LoadingOutlined,
   ShareAltOutlined,
 } from '@ant-design/icons'
@@ -493,7 +494,21 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         <div className={styles.headerActions}>
           <button
             type="button"
-            onClick={() => setShareModalVisible(true)}
+            onClick={handleCopyLink}
+            className={styles.actionBtn}
+            aria-label="复制链接"
+            title="复制链接"
+          >
+            <LinkOutlined />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShareModalVisible(true)
+              if (!shareImageUrl && !generatingShareImage) {
+                handleGenerateShareImage()
+              }
+            }}
             className={styles.actionBtn}
             aria-label="分享"
             title="分享"
@@ -502,7 +517,12 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
           </button>
           <button
             type="button"
-            onClick={() => setShareModalVisible(true)}
+            onClick={() => {
+              setShareModalVisible(true)
+              if (!videoUrl && !generatingVideo) {
+                handleGenerateVideo()
+              }
+            }}
             className={styles.actionBtn}
             aria-label="生成视频"
             title="生成视频"
@@ -631,20 +651,27 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         centered
         width={420}
       >
-        <div style={{ textAlign: 'center', padding: '20px 0', minHeight: 300 }}>
+        <div style={{ textAlign: 'center', padding: '20px 0', minHeight: 360 }}>
           {/* 占位符：保持最小高度，避免高度变化 */}
-          <div style={{ minHeight: 200 }}>
+          <div style={{ minHeight: 280 }}>
             {generatingShareImage ? (
-              <div>
-                <LoadingOutlined spin style={{ fontSize: 32 }} />
-                <p style={{ marginTop: 16 }}>正在生成分享图片...</p>
+              <div className={styles.loadingWrapper}>
+                <div className={styles.loadingIconWrapper}>
+                  <div className={styles.loadingOrbit}></div>
+                  <LoadingOutlined spin className={styles.loadingIcon} />
+                </div>
+                <p className={styles.loadingTitle}>正在生成分享图片</p>
+                <p className={styles.loadingSubtitle}>AI 正在创作中...</p>
+                <div className={styles.loadingProgress}>
+                  <div className={styles.loadingProgressBar}></div>
+                </div>
               </div>
             ) : shareImageUrl ? (
               <div>
                 <AntImage
                   src={shareImageUrl}
                   alt="分享图片"
-                  style={{ maxWidth: '100%', borderRadius: 8, minHeight: 180 }}
+                  style={{ maxWidth: '100%', borderRadius: 12, minHeight: 280 }}
                   preview={false}
                 />
                 <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
@@ -657,15 +684,20 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
             ) : generatingVideo ? (
-              <div>
-                <LoadingOutlined spin style={{ fontSize: 32 }} />
-                <p style={{ marginTop: 16 }}>正在生成动画视频...</p>
-                <p style={{ marginTop: 8, color: '#999' }}>
-                  进度: {Math.round(videoProgress * 100)}%
-                </p>
-                <p style={{ marginTop: 8, fontSize: 12, color: '#ccc' }}>
-                  请耐心等待，可能需要30-60秒
-                </p>
+              <div className={styles.loadingWrapper}>
+                <div className={styles.loadingIconWrapper}>
+                  <div className={styles.loadingOrbit}></div>
+                  <LoadingOutlined spin className={styles.loadingIcon} />
+                </div>
+                <p className={styles.loadingTitle}>正在生成动画视频</p>
+                <p className={styles.loadingSubtitle}>AI 正在渲染中...</p>
+                <div className={styles.loadingProgress}>
+                  <div
+                    className={styles.loadingProgressBar}
+                    style={{ width: `${Math.round(videoProgress * 100)}%` }}
+                  ></div>
+                </div>
+                <p className={styles.loadingPercent}>{Math.round(videoProgress * 100)}%</p>
               </div>
             ) : videoUrl ? (
               <div>
@@ -673,7 +705,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
                 <video
                   src={videoUrl}
                   controls
-                  style={{ width: '100%', borderRadius: 8, minHeight: 180 }}
+                  style={{ width: '100%', borderRadius: 12, minHeight: 280 }}
                 />
                 <div style={{ marginTop: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
                   <Button icon={<DownloadOutlined />} onClick={handleSaveVideo}>
