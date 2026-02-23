@@ -412,7 +412,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         // 二维码区域
         const qrSize = 140
         const qrX = width - qrSize - 20
-        const qrY = imageSize + 40
+        const qrY = imageSize + 24 // 二维码上方留24px间隔
 
         // 加载二维码
         const qrImg = new window.Image()
@@ -420,12 +420,11 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         qrImg.onload = () => {
           // 计算文字区域
           const textX = 20
-          const textMaxWidth = qrX - textX - 24 // 内容和二维码之间24px间隔
 
           // 计算文字垂直居中
           const lineHeight = 32
           const totalTextHeight = lines.length * lineHeight
-          const qrContentHeight = height - imageSize - 40
+          const qrContentHeight = height - imageSize - 24
           const availableHeight = qrContentHeight
 
           // 文字区域高度
@@ -445,10 +444,10 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
           // 绘制二维码
           ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
 
-          // 绘制"扫码看更多"文字
+          // 绘制"扫码看更多"文字（二维码下方6px间隔）
           ctx.fillStyle = '#999999'
           ctx.font = '12px "PingFang SC", "Microsoft YaHei", sans-serif'
-          ctx.fillText('扫码看更多', qrX, qrY + qrSize + 8)
+          ctx.fillText('扫码看更多', qrX, qrY + qrSize + 6)
 
           resolve(canvas.toDataURL('image/png'))
         }
@@ -601,9 +600,16 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
           {(loading || aiResult || aiImageUrl) && (
             <div className={styles.resultSection}>
               {loading ? (
-                <div className={styles.loadingBox}>
-                  <LoadingOutlined spin style={{ fontSize: 32 }} />
-                  <p>AI 正在生成中...</p>
+                <div className={styles.loadingWrapper}>
+                  <div className={styles.loadingIconWrapper}>
+                    <div className={styles.loadingOrbit}></div>
+                    <LoadingOutlined spin className={styles.loadingIcon} />
+                  </div>
+                  <p className={styles.loadingTitle}>AI 正在创作中</p>
+                  <p className={styles.loadingSubtitle}>请稍候...</p>
+                  <div className={styles.loadingProgress}>
+                    <div className={styles.loadingProgressBar}></div>
+                  </div>
                 </div>
               ) : aiImageUrl ? (
                 <div className={styles.imageResult}>
