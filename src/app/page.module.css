@@ -78,46 +78,158 @@
   color: #374151;
 }
 
+/* 炫酷的今日卡片 */
 .dailyCard {
+  position: relative;
   display: block;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20px;
-  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  border-radius: 24px;
+  padding: 28px;
   color: white;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow:
+    0 4px 15px rgba(102, 126, 234, 0.3),
+    0 0 40px rgba(102, 126, 234, 0.15);
+}
+
+/* 炫酷背景光效 */
+.dailyCard::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 40%);
+  animation: dailyGlow 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.dailyCard::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  pointer-events: none;
+}
+
+@keyframes dailyGlow {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(2%, 2%) rotate(2deg);
+  }
+  66% {
+    transform: translate(-1%, 1%) rotate(-1deg);
+  }
 }
 
 .dailyCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.3);
+  transform: translateY(-6px);
+  box-shadow:
+    0 12px 30px rgba(102, 126, 234, 0.4),
+    0 0 60px rgba(102, 126, 234, 0.2);
+}
+
+/* 装饰性光点 */
+.dailyCard .sparkle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.dailyCard .sparkle:nth-child(1) {
+  top: 20%;
+  left: 15%;
+  animation-delay: 0s;
+}
+
+.dailyCard .sparkle:nth-child(2) {
+  top: 30%;
+  right: 20%;
+  width: 6px;
+  height: 6px;
+  animation-delay: 0.5s;
+}
+
+.dailyCard .sparkle:nth-child(3) {
+  bottom: 25%;
+  right: 10%;
+  width: 10px;
+  height: 10px;
+  animation-delay: 1s;
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
 }
 
 .dailyContent {
-  font-size: 18px;
-  line-height: 1.6;
-  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+  font-size: 19px;
+  line-height: 1.7;
+  margin-bottom: 20px;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .dailyFooter {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 .updateTime {
-  font-size: 12px;
-  opacity: 0.8;
+  font-size: 13px;
+  opacity: 0.85;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .refreshBtn {
-  border-radius: 16px;
+  border-radius: 20px;
   font-weight: 500;
+  backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.refreshBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .listSection {
@@ -134,30 +246,53 @@
 .jokeList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .jokeCard {
+  position: relative;
   display: block;
   background: white;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* 卡片顶部装饰线 */
+.jokeCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  border-radius: 0 0 3px 3px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
 .jokeCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 24px rgba(102, 126, 234, 0.15),
+    0 0 0 1px rgba(102, 126, 234, 0.1);
+}
+
+.jokeCard:hover::before {
+  opacity: 1;
 }
 
 .jokeContent {
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.7;
   color: #1f2937;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -173,22 +308,40 @@
 .jokeActions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .likeCount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
-  color: #6b7280;
+  color: #9ca3af;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
+  padding: 6px 10px;
+  border-radius: 12px;
 }
 
 .likeCount:hover {
   color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .heartFilled {
   color: #ef4444;
+}
+
+/* 卡片标签 */
+.jokeTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
 }
 
 .loadMore {
@@ -325,6 +478,79 @@
   font-size: 13px;
   color: #9ca3af;
   letter-spacing: 2px;
+}
+
+/* 错误提示 */
+.errorWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 12px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  margin-top: 16px;
+}
+
+.errorIconWrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.errorCircle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.errorIcon {
+  font-size: 32px;
+  color: #f59e0b;
+}
+
+.errorTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.errorMessage {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+  max-width: 260px;
+  line-height: 1.5;
+}
+
+.retryBtn {
+  margin-top: 8px;
+  height: 44px;
+  padding: 0 32px;
+  border-radius: 22px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.retryBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 /* 旧的样式保留兼容性 */

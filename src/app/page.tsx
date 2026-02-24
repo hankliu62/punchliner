@@ -1,10 +1,16 @@
 'use client'
 
-import { HeartFilled, HeartOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons'
+import {
+  FrownOutlined,
+  HeartFilled,
+  HeartOutlined,
+  LoadingOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons'
 import { Button, Skeleton } from 'antd'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { generateShareUrl } from '@/lib/crypto'
 import { getRoutePrefix } from '@/lib/route'
@@ -13,6 +19,8 @@ import styles from './page.module.css'
 
 const COLLECT_STORAGE_KEY = 'punchliner_collects'
 const DAILY_JOKE_STORAGE_KEY = 'punchliner_daily_joke'
+const JOKES_LIST_CACHE_KEY = 'punchliner_jokes_list'
+const JOKES_PAGE_CACHE_KEY = 'punchliner_jokes_page'
 
 function getToday(): string {
   const now = new Date()
@@ -61,6 +69,34 @@ function saveDailyJoke(joke: Joke) {
   )
 }
 
+function getCachedJokesList(): { jokes: Joke[]; page: number; hasMore: boolean } | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const jokesData = localStorage.getItem(JOKES_LIST_CACHE_KEY)
+    const pageData = localStorage.getItem(JOKES_PAGE_CACHE_KEY)
+    if (jokesData && pageData) {
+      return {
+        jokes: JSON.parse(jokesData),
+        page: parseInt(pageData, 10),
+        hasMore: true, // 默认还有更多
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
+function saveJokesList(jokes: Joke[], page: number) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(JOKES_LIST_CACHE_KEY, JSON.stringify(jokes))
+    localStorage.setItem(JOKES_PAGE_CACHE_KEY, String(page))
+  } catch {
+    // ignore
+  }
+}
+
 function addCollect(joke: Joke) {
   const collects = getCollects()
   const newItem: CollectItem = {
@@ -86,6 +122,8 @@ export default function HomePage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [lastRefreshTime, setLastRefreshTime] = useState(0)
   const [collectedIds, setCollectedIds] = useState<Set<string>>(new Set())
+  const [jokesError, setJokesError] = useState<string | null>(null) // 段子列表错误状态
+  const initialized = useRef(false) // 标记是否已初始化
 
   const fetchRandomJoke = useCallback(async (forceRefresh: boolean = false) => {
     if (!forceRefresh) {
@@ -109,23 +147,62 @@ export default function HomePage() {
     }
   }, [])
 
-  const fetchJokes = useCallback(async (pageNum: number, _isLoadMore: boolean = false) => {
-    try {
-      const res = await fetch(`/api/jokes/list?page=${pageNum}`)
-      const data = await res.json()
-      if (data.code === 1 && data.data) {
-        const newList = data.data.list
-        if (pageNum === 1) {
-          setJokes(newList)
-        } else {
-          setJokes((prev) => [...prev, ...newList])
+  const fetchJokes = useCallback(
+    async (pageNum: number, _isLoadMore: boolean = false, retryCount = 0) => {
+      const maxRetries = 2 // 最多重试2次
+
+      const doFetch = async () => {
+        try {
+          const res = await fetch(`/api/jokes/list?page=${pageNum}`)
+          const data = await res.json()
+          if (data.code === 1 && data.data) {
+            const newList = data.data.list
+            if (pageNum === 1) {
+              setJokes(newList)
+              // 保存到缓存
+              saveJokesList(newList, pageNum)
+              // 如果第一页数据为空，设置错误提示
+              if (!newList || newList.length === 0) {
+                setJokesError('暂无段子，请稍后再试')
+              } else {
+                setJokesError(null)
+              }
+            } else {
+              setJokes((prev) => [...prev, ...newList])
+              // 更新缓存
+              const currentJokes = JSON.parse(localStorage.getItem(JOKES_LIST_CACHE_KEY) || '[]')
+              saveJokesList([...currentJokes, ...newList], pageNum)
+            }
+            setHasMore(data.data.page < data.data.totalPage)
+          } else {
+            // API 返回错误，重试
+            if (retryCount < maxRetries) {
+              console.log(`段子列表请求失败，第${retryCount + 1}次重试...`)
+              await new Promise((resolve) => setTimeout(resolve, 1000)) // 等待1秒
+              return doFetch()
+            }
+            if (pageNum === 1) {
+              setJokesError(data.msg || '获取段子失败')
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch jokes:', error)
+          // 网络错误，重试
+          if (retryCount < maxRetries) {
+            console.log(`段子列表请求失败，第${retryCount + 1}次重试...`)
+            await new Promise((resolve) => setTimeout(resolve, 1000)) // 等待1秒
+            return doFetch()
+          }
+          if (pageNum === 1) {
+            setJokesError('网络错误，请检查网络后重试')
+          }
         }
-        setHasMore(data.data.page < data.data.totalPage)
       }
-    } catch (error) {
-      console.error('Failed to fetch jokes:', error)
-    }
-  }, [])
+
+      await doFetch()
+    },
+    []
+  )
 
   // 为新段子生成固定点赞数（内存缓存）
   const getLikes = useCallback(
@@ -140,10 +217,33 @@ export default function HomePage() {
     [likes]
   )
 
+  // 使用 useRef 防止重复初始化
   useEffect(() => {
+    if (initialized.current) return
+    initialized.current = true
+
     const init = async () => {
-      setLoading(true)
+      // 先尝试从缓存加载
+      const cachedData = getCachedJokesList()
+      if (cachedData) {
+        setJokes(cachedData.jokes)
+        setPage(cachedData.page)
+        setHasMore(cachedData.hasMore)
+        // 设置 loading 为 false，先显示缓存
+        setLoading(false)
+      } else {
+        setLoading(true)
+      }
+
+      // 然后请求最新数据
       await Promise.all([fetchRandomJoke(false), fetchJokes(1, false)])
+
+      // 请求完成后更新缓存
+      const updatedData = getCachedJokesList()
+      if (updatedData) {
+        saveJokesList(updatedData.jokes, updatedData.page)
+      }
+
       setLoading(false)
       setCollectedIds(new Set(getCollects().map((item) => item.id)))
     }
@@ -245,6 +345,11 @@ export default function HomePage() {
               )}
               className={styles.dailyCard}
             >
+              {/* 装饰性光点 */}
+              <span className={styles.sparkle}></span>
+              <span className={styles.sparkle}></span>
+              <span className={styles.sparkle}></span>
+
               <p className={styles.dailyContent}>{dailyJoke.content}</p>
               <div className={styles.dailyFooter}>
                 <span className={styles.updateTime}>{dailyJoke.updateTime}</span>
@@ -278,6 +383,30 @@ export default function HomePage() {
                   <Skeleton active paragraph={{ rows: 2 }} />
                 </div>
               ))}
+            </div>
+          ) : jokesError ? (
+            <div className={styles.errorWrapper}>
+              <div className={styles.errorIconWrapper}>
+                <div className={styles.errorCircle}>
+                  <FrownOutlined className={styles.errorIcon} />
+                </div>
+              </div>
+              <p className={styles.errorTitle}>哎呀，段子跑丢了</p>
+              <p className={styles.errorMessage}>{jokesError}</p>
+              <Button
+                type="primary"
+                size="large"
+                icon={<ReloadOutlined />}
+                onClick={() => {
+                  setJokesError(null)
+                  setJokes([])
+                  setPage(1)
+                  fetchJokes(1, false)
+                }}
+                className={styles.retryBtn}
+              >
+                再试一次
+              </Button>
             </div>
           ) : (
             <>
