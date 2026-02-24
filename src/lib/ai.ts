@@ -68,7 +68,7 @@ export async function generateImage(prompt: string): Promise<string | null> {
           Authorization: `Bearer ${ZHIPU_API_KEY}`,
         },
         body: JSON.stringify({
-          model: 'cogview-3',
+          model: 'cogview-3-flash', // 使用免费版本
           prompt: prompt,
           size: '1024x1024',
         }),
