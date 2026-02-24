@@ -17,9 +17,51 @@ import { use, useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { generateShareUrl, getContentFromUrl } from '@/lib/crypto'
 import { getRoutePrefix } from '@/lib/route'
+import { getVideoCache, saveVideoCache } from '@/lib/video-cache'
 import type { AIAction, AIActionType, CollectItem, Joke } from '@/types'
 import { AI_ACTIONS, REWRITE_STYLES } from '@/types'
 import styles from './page.module.css'
+
+// 图片分享 loading 组件
+function ImageShareLoading({
+  title = '正在生成分享图片',
+  subtitle = 'AI 正在创作中...',
+}: {
+  title?: string
+  subtitle?: string
+}) {
+  return (
+    <div className={styles.loadingWrapper}>
+      <div className={styles.loadingIconWrapper}>
+        <div className={styles.loadingOrbit}></div>
+        <LoadingOutlined spin className={styles.loadingIcon} />
+      </div>
+      <p className={styles.loadingTitle}>{title}</p>
+      <p className={styles.loadingSubtitle}>{subtitle}</p>
+      <div className={styles.loadingProgress}>
+        <div className={styles.loadingProgressBar}></div>
+      </div>
+    </div>
+  )
+}
+
+// 视频生成 loading 组件
+function VideoGeneratingLoading({ progress = 0 }: { progress: number }) {
+  return (
+    <div className={styles.loadingWrapper}>
+      <div className={styles.loadingIconWrapper}>
+        <div className={styles.loadingOrbit}></div>
+        <LoadingOutlined spin className={styles.loadingIcon} />
+      </div>
+      <p className={styles.loadingTitle}>正在生成动画视频</p>
+      <p className={styles.loadingSubtitle}>AI 正在渲染中...</p>
+      <div className={styles.loadingProgress}>
+        <div className={styles.loadingProgressBar} style={{ width: `${progress}%` }}></div>
+      </div>
+      <p className={styles.loadingPercent}>{progress}%</p>
+    </div>
+  )
+}
 
 const COLLECT_STORAGE_KEY = 'punchliner_collects'
 
@@ -66,6 +108,8 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
   const [_videoTaskId, setVideoTaskId] = useState<string | null>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [videoProgress, setVideoProgress] = useState(0)
+  const [videoError, setVideoError] = useState<string | null>(null)
+  const [modalTitle, setModalTitle] = useState<string>('分享') // 弹窗标题
 
   // 使用 ref 避免无限循环
   const initialized = useRef(false)
@@ -258,95 +302,109 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
-  // 生成动画视频
+  // 生成动画视频（使用SSE实时推送进度）
   const handleGenerateVideo = async () => {
     if (!joke) return
+
+    // 设置弹窗标题为"视频生成"
+    setModalTitle('视频生成')
+
+    // 首先检查缓存
+    const cachedVideoUrl = getVideoCache(joke.content)
+    if (cachedVideoUrl) {
+      setVideoUrl(cachedVideoUrl)
+      setGeneratingVideo(false)
+      setShareModalVisible(true)
+      return
+    }
+
     setGeneratingVideo(true)
     setVideoUrl(null)
     setVideoProgress(0)
+    setVideoError(null)
+    setShareModalVisible(true)
 
     try {
-      // 先获取AI配图
-      const imageRes = await fetch('/api/ai/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: joke.content }),
-      })
-      const imageData = await imageRes.json()
-
-      if (imageData.code !== 1 || !imageData.data.url) {
-        toast.error('图片生成失败，无法生成视频')
-        setGeneratingVideo(false)
-        return
-      }
-
-      // 调用视频生成API
+      // 调用视频生成API，获取taskId
       const res = await fetch('/api/ai/video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content: joke.content,
-          imageUrl: imageData.data.url,
         }),
       })
       const data = await res.json()
 
-      if (data.code === 1 && data.data.taskId) {
-        setVideoTaskId(data.data.taskId)
-        // 开始轮询视频生成状态
-        pollVideoStatus(data.data.taskId)
-      } else {
-        toast.error(data.msg || '视频生成失败，请配置 PIKA_API_KEY')
+      if (data.code !== 1 || !data.data.taskId) {
+        const errorMsg = data.msg || '视频生成失败'
+        toast.error(errorMsg)
+        setVideoError(errorMsg)
         setGeneratingVideo(false)
+        return
+      }
+
+      // 使用SSE连接实时获取进度
+      const eventSource = new EventSource(`/api/ai/video?taskId=${data.data.taskId}`)
+
+      eventSource.onmessage = (event) => {
+        try {
+          const result = JSON.parse(event.data)
+
+          if (result.status === 'processing') {
+            // 更新进度
+            setVideoProgress(result.progress || 0)
+          } else if (result.status === 'completed') {
+            // 视频生成完成
+            eventSource.close()
+            setVideoProgress(100)
+            if (result.videoUrl) {
+              setVideoUrl(result.videoUrl)
+              // 保存到缓存
+              if (joke) {
+                saveVideoCache(joke.content, result.videoUrl)
+              }
+            }
+            setGeneratingVideo(false)
+            toast.success('视频生成完成！')
+          } else if (result.status === 'failed') {
+            // 视频生成失败
+            eventSource.close()
+            const errorMsg = result.error || '视频生成失败'
+            toast.error(errorMsg)
+            setVideoError(errorMsg)
+            setGeneratingVideo(false)
+          }
+        } catch (parseError) {
+          console.error('SSE parse error:', parseError)
+        }
+      }
+
+      eventSource.onerror = () => {
+        eventSource.close()
+        // 如果已经拿到了videoUrl，就不报错
+        if (!videoUrl) {
+          const errorMsg = '视频生成连接失败'
+          toast.error(errorMsg)
+          setVideoError(errorMsg)
+          setGeneratingVideo(false)
+        }
       }
     } catch (error) {
       console.error('Generate video error:', error)
-      toast.error('视频生成失败')
+      const errorMsg = '视频生成失败，请重试'
+      toast.error(errorMsg)
+      setVideoError(errorMsg)
       setGeneratingVideo(false)
     }
-  }
-
-  // 轮询视频生成状态
-  const pollVideoStatus = async (taskId: string) => {
-    const checkStatus = async () => {
-      try {
-        const res = await fetch(`/api/ai/video?taskId=${taskId}`)
-        const data = await res.json()
-
-        if (data.code === 1 && data.data) {
-          setVideoProgress(data.data.progress || 0)
-
-          if (data.data.status === 'completed' && data.data.videoUrl) {
-            setVideoUrl(data.data.videoUrl)
-            setGeneratingVideo(false)
-            toast.success('视频生成完成！')
-            return true
-          } else if (data.data.status === 'failed') {
-            toast.error('视频生成失败')
-            setGeneratingVideo(false)
-            return true
-          }
-        }
-        return false
-      } catch {
-        return false
-      }
-    }
-
-    // 每3秒轮询一次
-    const interval = setInterval(async () => {
-      const done = await checkStatus()
-      if (done) {
-        clearInterval(interval)
-      }
-    }, 3000)
   }
 
   // 保存视频
   const handleSaveVideo = async () => {
     if (!videoUrl) return
     try {
-      const response = await fetch(videoUrl)
+      // 使用代理下载视频，解决跨域问题
+      const proxyUrl = `/api/proxy/video?url=${encodeURIComponent(videoUrl)}`
+      const response = await fetch(proxyUrl)
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -393,9 +451,9 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         return
       }
 
-      // 设置画布大小为 2:3 比例 (600x900)
+      // 设置画布大小 (600x810，底部留白约24px)
       const width = 600
-      const height = 900
+      const height = 810
       canvas.width = width
       canvas.height = height
 
@@ -549,6 +607,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
           <button
             type="button"
             onClick={() => {
+              setModalTitle('分享')
               setShareModalVisible(true)
               if (!shareImageUrl && !generatingShareImage) {
                 handleGenerateShareImage()
@@ -563,9 +622,22 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
           <button
             type="button"
             onClick={() => {
-              setShareModalVisible(true)
+              // 如果有缓存视频，直接显示
+              if (joke) {
+                const cachedVideoUrl = getVideoCache(joke.content)
+                if (cachedVideoUrl) {
+                  setModalTitle('视频生成')
+                  setVideoUrl(cachedVideoUrl)
+                  setShareModalVisible(true)
+                  return
+                }
+              }
+              // 没有缓存则生成新视频
               if (!videoUrl && !generatingVideo) {
                 handleGenerateVideo()
+              } else {
+                setModalTitle('视频生成')
+                setShareModalVisible(true)
               }
             }}
             className={styles.actionBtn}
@@ -710,7 +782,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
         </section>
       </main>
 
-      {/* 分享弹窗 */}
+      {/* 分享/视频生成弹窗 */}
       <Modal
         open={shareModalVisible}
         onCancel={() => {
@@ -721,9 +793,10 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
           setVideoUrl(null)
           setVideoTaskId(null)
           setVideoProgress(0)
+          setVideoError(null)
         }}
         footer={null}
-        title="分享"
+        title={modalTitle}
         centered
         width={420}
       >
@@ -731,17 +804,7 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
           {/* 占位符：保持最小高度，避免高度变化 */}
           <div style={{ minHeight: 280 }}>
             {generatingShareImage ? (
-              <div className={styles.loadingWrapper}>
-                <div className={styles.loadingIconWrapper}>
-                  <div className={styles.loadingOrbit}></div>
-                  <LoadingOutlined spin className={styles.loadingIcon} />
-                </div>
-                <p className={styles.loadingTitle}>正在生成分享图片</p>
-                <p className={styles.loadingSubtitle}>AI 正在创作中...</p>
-                <div className={styles.loadingProgress}>
-                  <div className={styles.loadingProgressBar}></div>
-                </div>
-              </div>
+              <ImageShareLoading />
             ) : shareImageUrl ? (
               <div>
                 <AntImage
@@ -760,26 +823,12 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
             ) : generatingVideo ? (
-              <div className={styles.loadingWrapper}>
-                <div className={styles.loadingIconWrapper}>
-                  <div className={styles.loadingOrbit}></div>
-                  <LoadingOutlined spin className={styles.loadingIcon} />
-                </div>
-                <p className={styles.loadingTitle}>正在生成动画视频</p>
-                <p className={styles.loadingSubtitle}>AI 正在渲染中...</p>
-                <div className={styles.loadingProgress}>
-                  <div
-                    className={styles.loadingProgressBar}
-                    style={{ width: `${Math.round(videoProgress * 100)}%` }}
-                  ></div>
-                </div>
-                <p className={styles.loadingPercent}>{Math.round(videoProgress * 100)}%</p>
-              </div>
+              <VideoGeneratingLoading progress={videoProgress} />
             ) : videoUrl ? (
               <div>
                 {/* biome-ignore lint/a11y/useMediaCaption: 视频不需要字幕 */}
                 <video
-                  src={videoUrl}
+                  src={`/api/proxy/video?url=${encodeURIComponent(videoUrl)}`}
                   controls
                   style={{ width: '100%', borderRadius: 12, minHeight: 280 }}
                 />
@@ -791,6 +840,28 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
                     复制链接
                   </Button>
                 </div>
+              </div>
+            ) : videoError ? (
+              <div className={styles.errorWrapper}>
+                <div className={styles.errorIconWrapper}>
+                  <div className={styles.errorCircle}>
+                    <span className={styles.errorX}>×</span>
+                  </div>
+                </div>
+                <p className={styles.errorTitle}>生成失败</p>
+                <p className={styles.errorMessage}>{videoError}</p>
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<VideoCameraOutlined />}
+                  onClick={() => {
+                    setVideoError(null)
+                    handleGenerateVideo()
+                  }}
+                  block
+                >
+                  重试
+                </Button>
               </div>
             ) : shareImageError ? (
               <div className={styles.errorWrapper}>
@@ -822,7 +893,8 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
             !shareImageUrl &&
             !generatingVideo &&
             !videoUrl &&
-            !shareImageError && (
+            !shareImageError &&
+            !videoError && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
                 <Button
                   type="primary"
@@ -844,9 +916,6 @@ export default function JokeDetailPage({ params }: { params: Promise<{ id: strin
                 >
                   生成动画视频 (Beta)
                 </Button>
-                <p style={{ fontSize: 12, color: '#999', marginTop: 8 }}>
-                  动画视频需要配置 PIKA_API_KEY
-                </p>
               </div>
             )}
         </div>
