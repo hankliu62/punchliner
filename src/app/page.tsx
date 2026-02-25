@@ -125,7 +125,10 @@ export default function HomePage() {
   const [jokesError, setJokesError] = useState<string | null>(null) // 段子列表错误状态
   const initialized = useRef(false) // 标记是否已初始化
 
-  const fetchRandomJoke = useCallback(async (forceRefresh: boolean = false) => {
+  const fetchRandomJoke = useCallback(async (forceRefresh: boolean = false, retryCount = 0) => {
+    const maxRetries = 2 // 最多重试2次
+
+    // 先检查缓存
     if (!forceRefresh) {
       const cached = getCachedDailyJoke()
       if (cached) {
@@ -134,17 +137,36 @@ export default function HomePage() {
       }
     }
 
-    try {
-      const res = await fetch('/api/jokes/random')
-      const data = await res.json()
-      if (data.code === 1 && data.data.length > 0) {
-        const joke = data.data[0]
-        setDailyJoke(joke)
-        saveDailyJoke(joke)
+    const doFetch = async () => {
+      try {
+        const res = await fetch('/api/jokes/random')
+        const data = await res.json()
+        if (data.code === 1 && data.data.length > 0) {
+          const joke = data.data[0]
+          setDailyJoke(joke)
+          saveDailyJoke(joke)
+          return true
+        } else {
+          // API 返回空数据，重试
+          if (retryCount < maxRetries) {
+            console.log(`每日段子请求为空，第${retryCount + 1}次重试...`)
+            await new Promise((resolve) => setTimeout(resolve, 1000))
+            return doFetch()
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch random joke:', error)
+        // 网络错误，重试
+        if (retryCount < maxRetries) {
+          console.log(`每日段子请求失败，第${retryCount + 1}次重试...`)
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+          return doFetch()
+        }
       }
-    } catch (error) {
-      console.error('Failed to fetch random joke:', error)
+      return false
     }
+
+    await doFetch()
   }, [])
 
   const fetchJokes = useCallback(
