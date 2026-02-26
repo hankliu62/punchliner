@@ -109,10 +109,7 @@ export default function ColdJokeDetailPage({ params }: { params: Promise<{ id: s
   const gridCount = sentences.length
 
   // 本地猫咪图片列表
-  const catImages = [
-    '/Camera_1040g3k831n5t2j3vl2d05p4612e43ojud7380e8.jpg',
-    '/Camera_1040g3k831n5t2j3vl2dg5p4612e43oju6gr8tfo.jpg',
-  ]
+  const catImages = ['/cat1.png', '/cat2.png']
 
   // 随机获取猫咪图片
   const getRandomCatImage = (index: number): string => {
@@ -195,6 +192,32 @@ export default function ColdJokeDetailPage({ params }: { params: Promise<{ id: s
       }
     }
 
+    // 预加载所有图片为Blob URL（解决CORS问题）
+    const loadedImages: HTMLImageElement[] = []
+    for (const url of catImageUrls) {
+      try {
+        const response = await fetch(url)
+        const blob = await response.blob()
+        const blobUrl = URL.createObjectURL(blob)
+        const img = new window.Image()
+        img.src = blobUrl
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+        })
+        loadedImages.push(img)
+      } catch {
+        // 使用备用图片
+        const fallbackImg = new window.Image()
+        fallbackImg.src = getRandomCatImage(loadedImages.length)
+        await new Promise<void>((resolve) => {
+          fallbackImg.onload = () => resolve()
+          fallbackImg.onerror = () => resolve()
+        })
+        loadedImages.push(fallbackImg)
+      }
+    }
+
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
@@ -231,10 +254,9 @@ export default function ColdJokeDetailPage({ params }: { params: Promise<{ id: s
           roundedRect(ctx, boxX, boxY, boxWidth, boxHeight, 4)
           ctx.stroke()
 
-          // 3. 加载并绘制猫咪图片（在框内）
-          const img = new window.Image()
-          img.crossOrigin = 'anonymous'
-          img.onload = () => {
+          // 3. 使用预加载的图片（在框内）
+          const img = loadedImages[index]
+          if (img && img.complete) {
             // 猫咪图片区域：上半部分
             const imgAreaHeight = boxHeight * 0.55
             const imgSize = Math.min(boxWidth * 0.7, imgAreaHeight * 0.8)
@@ -263,8 +285,7 @@ export default function ColdJokeDetailPage({ params }: { params: Promise<{ id: s
             })
 
             resolveDraw()
-          }
-          img.onerror = () => {
+          } else {
             // 图片加载失败，只绘制文字
             ctx.fillStyle = '#000000'
             ctx.font = '500 15px "PingFang SC", "Microsoft YaHei", sans-serif'
@@ -282,7 +303,6 @@ export default function ColdJokeDetailPage({ params }: { params: Promise<{ id: s
 
             resolveDraw()
           }
-          img.src = catImageUrls[index] || getRandomCatImage(index)
         })
       }
 
