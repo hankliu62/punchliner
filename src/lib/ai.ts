@@ -16,6 +16,18 @@ const PROMPTS: Record<AIActionType, (content: string, style?: string) => string>
     `请为以下段子生成一张幽默的配图描述，风格可以是表情包风格或简约文字卡片风格，描述不要超过50字：\n\n${content}\n\n图片描述：`,
   moments: (content) =>
     `请为以下段子生成一条适合发朋友圈的文案，要求有趣、吸引人点赞，不超过100字：\n\n${content}\n\n文案：`,
+  coldImage: (content) =>
+    `请生成一张可爱卡通猫咪图片，要求：
+1. 纯透明背景（PNG格式）
+2. 一只可爱的卡通猫咪（Q版、大眼睛、萌萌的）
+3. 风格：简约卡通、可爱
+4. 图片尺寸：正方形
+5. 不要有任何文字
+6. 不要有背景色
+
+猫咪姿势可以多样化：站立、坐姿、歪头、睡觉等都可以
+
+请生成图片描述：`,
 }
 
 export async function generateAIContent(

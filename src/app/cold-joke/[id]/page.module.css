@@ -1,0 +1,343 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.backBtn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.2s;
+  color: #6b7280;
+}
+
+.actionBtn:hover {
+  color: #2563eb;
+}
+
+.heartFilled {
+  color: #ef4444;
+}
+
+.main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.jokeSection {
+  margin-bottom: 24px;
+}
+
+.jokeCard {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.jokeContent {
+  font-size: 17px;
+  line-height: 1.8;
+  color: #1f2937;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.updateTime {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* 操作按钮区域 */
+.actionSection {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.actionBtnLarge {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.actionBtnLarge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-color: #2563eb;
+}
+
+.actionBtnLarge:active {
+  transform: translateY(0);
+}
+
+.actionIcon {
+  font-size: 24px;
+}
+
+.actionLabel {
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* 配图区域 */
+.imageSection {
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+}
+
+.imageItem {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 12px;
+}
+
+.generatedImage {
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* 类似冷笑话 */
+.similarSection {
+  margin-bottom: 24px;
+}
+
+.similarGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.similarCard {
+  display: block;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.similarCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #2563eb;
+}
+
+.similarContent {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #374151;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.similarMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.similarIndex {
+  font-size: 12px;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.similarTime {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* 空状态 */
+.emptyState {
+  text-align: center;
+  padding: 32px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.emptyText {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* 加载动画 */
+.loadingWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+  background: white;
+  border-radius: 16px;
+}
+
+.loadingIconWrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loadingOrbit {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid transparent;
+  border-top: 2px solid #2563eb;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
+}
+
+.loadingOrbit::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  border: 1px solid transparent;
+  border-top: 2px solid #93c5fd;
+  border-radius: 50%;
+  animation: spin 2s linear infinite reverse;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingIcon {
+  font-size: 14px;
+  color: #2563eb;
+  z-index: 1;
+}
+
+.loadingTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.loadingSubtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* 错误提示 */
+.errorWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 12px;
+  background: white;
+  border-radius: 16px;
+}
+
+.errorMessage {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+}
+
+/* 加载状态 */
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #2563eb;
+  font-weight: 500;
+  min-height: 300px;
+}

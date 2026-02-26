@@ -1,38 +1,45 @@
 export interface Joke {
-  id: string;
-  content: string;
-  updateTime: string;
+  id: string
+  content: string
+  updateTime: string
 }
 
 export interface JokeResponse {
-  code: number;
-  msg: string;
-  data: Joke[];
+  code: number
+  msg: string
+  data: Joke[]
 }
 
 export interface JokeListResponse {
-  code: number;
-  msg: string;
+  code: number
+  msg: string
   data: {
-    page: number;
-    totalCount: number;
-    totalPage: number;
-    limit: number;
-    list: Joke[];
-  };
+    page: number
+    totalCount: number
+    totalPage: number
+    limit: number
+    list: Joke[]
+  }
 }
 
 export interface CollectItem extends Joke {
-  collectTime: string;
+  collectTime: string
 }
 
-export type AIActionType = 'continue' | 'rewrite' | 'roast' | 'similar' | 'image' | 'moments';
+export type AIActionType =
+  | 'continue'
+  | 'rewrite'
+  | 'roast'
+  | 'similar'
+  | 'image'
+  | 'moments'
+  | 'coldImage'
 
 export interface AIAction {
-  type: AIActionType;
-  label: string;
-  icon: string;
-  description: string;
+  type: AIActionType
+  label: string
+  icon: string
+  description: string
 }
 
 export const AI_ACTIONS: AIAction[] = [
@@ -72,7 +79,7 @@ export const AI_ACTIONS: AIAction[] = [
     icon: '📱',
     description: '生成朋友圈素材',
   },
-];
+]
 
 export const REWRITE_STYLES = [
   { value: 'cold', label: '冷幽默' },
@@ -80,4 +87,4 @@ export const REWRITE_STYLES = [
   { value: 'silly', label: '沙雕风' },
   { value: 'literary', label: '文艺复兴' },
   { value: 'joker', label: '段子手' },
-];
+]

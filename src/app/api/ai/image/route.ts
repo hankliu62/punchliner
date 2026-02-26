@@ -4,13 +4,21 @@ import { generateAIContent, generateImage } from '@/lib/ai'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { content } = body
+    const { content, style } = body
 
     if (!content) {
       return NextResponse.json({ code: 0, msg: '参数错误', data: null })
     }
 
-    const imagePrompt = await generateAIContent('image', content)
+    let imagePrompt: string
+
+    if (style === 'cold') {
+      // 冷笑话风格：黑色背景 + 橙色/黄色文字
+      imagePrompt = await generateAIContent('coldImage', content)
+    } else {
+      imagePrompt = await generateAIContent('image', content)
+    }
+
     const imageUrl = await generateImage(imagePrompt)
 
     if (!imageUrl) {

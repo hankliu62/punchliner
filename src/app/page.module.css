@@ -577,3 +577,249 @@
   height: 44px;
   font-weight: 500;
 }
+
+/* ========================================
+   冷笑话样式 - 暗调风格
+   ======================================== */
+
+/* 冷笑话区域 */
+.coldJokeSection {
+  margin-bottom: 32px;
+}
+
+.coldJokeHeader {
+  margin-bottom: 12px;
+}
+
+.coldJokeTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* 暗调冷笑话卡片 */
+.coldJokeCard {
+  position: relative;
+  display: block;
+  background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+  border-radius: 20px;
+  padding: 24px;
+  color: #e0e0e0;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 165, 0, 0.15);
+}
+
+/* 暗调背景光效 */
+.coldJokeCard::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  left: -30%;
+  width: 160%;
+  height: 160%;
+  background:
+    radial-gradient(circle at 70% 30%, rgba(255, 165, 0, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(100, 100, 120, 0.1) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+.coldJokeCard:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 30px rgba(255, 165, 0, 0.1);
+}
+
+/* 装饰性雪花效果 */
+.coldJokeCard .snowflake {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  animation: snowfall 4s ease-in-out infinite;
+}
+
+.coldJokeCard .snowflake:nth-child(1) {
+  top: 15%;
+  left: 10%;
+  animation-delay: 0s;
+  font-size: 10px;
+}
+
+.coldJokeCard .snowflake:nth-child(2) {
+  top: 25%;
+  right: 15%;
+  animation-delay: 1s;
+  font-size: 14px;
+}
+
+.coldJokeCard .snowflake:nth-child(3) {
+  bottom: 20%;
+  right: 10%;
+  animation-delay: 2s;
+  font-size: 8px;
+}
+
+.coldJokeCard .snowflake:nth-child(4) {
+  bottom: 30%;
+  left: 20%;
+  animation-delay: 3s;
+  font-size: 11px;
+}
+
+@keyframes snowfall {
+  0%,
+  100% {
+    opacity: 0.1;
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translateY(5px) rotate(10deg);
+  }
+}
+
+.coldJokeContent {
+  position: relative;
+  z-index: 1;
+  font-size: 17px;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: #c9d1d9;
+}
+
+.coldJokeFooter {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.coldJokeTime {
+  font-size: 12px;
+  color: #8b949e;
+  font-weight: 500;
+}
+
+.coldJokeRefreshBtn {
+  border-radius: 16px;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+  background: rgba(255, 165, 0, 0.15);
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  color: #ffa500;
+  transition: all 0.2s ease;
+}
+
+.coldJokeRefreshBtn:hover {
+  background: rgba(255, 165, 0, 0.25);
+  border-color: rgba(255, 165, 0, 0.5);
+}
+
+/* 冷笑话列表 */
+.coldJokeList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.coldJokeListCard {
+  position: relative;
+  display: block;
+  background: linear-gradient(145deg, #1e1e30 0%, #16162a 100%);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  border: 1px solid rgba(255, 165, 0, 0.08);
+}
+
+/* 卡片顶部装饰线 */
+.coldJokeListCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ffa500, transparent);
+  border-radius: 0 0 2px 2px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.coldJokeListCard:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 20px rgba(255, 165, 0, 0.08);
+  border-color: rgba(255, 165, 0, 0.2);
+}
+
+.coldJokeListCard:hover::before {
+  opacity: 0.6;
+}
+
+.coldJokeListContent {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #b0b8c4;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.coldJokeListFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.coldJokeListTime {
+  font-size: 12px;
+  color: #6e7681;
+}
+
+.coldJokeListActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coldJokeListLike {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #6e7681;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.coldJokeListLike:hover {
+  color: #ffa500;
+  background: rgba(255, 165, 0, 0.1);
+}
+
+.coldJokeHeartFilled {
+  color: #ffa500;
+}

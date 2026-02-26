@@ -4,6 +4,7 @@ import {
   FrownOutlined,
   HeartFilled,
   HeartOutlined,
+  LikeOutlined,
   LoadingOutlined,
   ReloadOutlined,
 } from '@ant-design/icons'
@@ -12,13 +13,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { generateShareUrl } from '@/lib/crypto'
+import { encodeParams, generateShareUrl } from '@/lib/crypto'
 import { getRoutePrefix } from '@/lib/route'
 import type { CollectItem, Joke } from '@/types'
 import styles from './page.module.css'
 
 const COLLECT_STORAGE_KEY = 'punchliner_collects'
 const DAILY_JOKE_STORAGE_KEY = 'punchliner_daily_joke'
+const DAILY_COLD_JOKE_STORAGE_KEY = 'punchliner_daily_cold_joke'
 const JOKES_LIST_CACHE_KEY = 'punchliner_jokes_list'
 const JOKES_PAGE_CACHE_KEY = 'punchliner_jokes_page'
 
@@ -62,6 +64,32 @@ function getCachedDailyJoke(): Joke | null {
 function saveDailyJoke(joke: Joke) {
   localStorage.setItem(
     DAILY_JOKE_STORAGE_KEY,
+    JSON.stringify({
+      date: getToday(),
+      joke,
+    })
+  )
+}
+
+// 冷笑话缓存函数
+function getCachedDailyColdJoke(): Joke | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const data = localStorage.getItem(DAILY_COLD_JOKE_STORAGE_KEY)
+    if (!data) return null
+    const cached = JSON.parse(data)
+    if (cached.date === getToday()) {
+      return cached.joke
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+function saveDailyColdJoke(joke: Joke) {
+  localStorage.setItem(
+    DAILY_COLD_JOKE_STORAGE_KEY,
     JSON.stringify({
       date: getToday(),
       joke,
@@ -113,10 +141,12 @@ function removeCollect(id: string) {
 
 export default function HomePage() {
   const [dailyJoke, setDailyJoke] = useState<Joke | null>(null)
+  const [dailyColdJoke, setDailyColdJoke] = useState<Joke | null>(null)
   const [jokes, setJokes] = useState<Joke[]>([])
   const [likes, setLikes] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [coldRefreshing, setColdRefreshing] = useState(false)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -159,6 +189,51 @@ export default function HomePage() {
         // 网络错误，重试
         if (retryCount < maxRetries) {
           console.log(`每日段子请求失败，第${retryCount + 1}次重试...`)
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+          return doFetch()
+        }
+      }
+      return false
+    }
+
+    await doFetch()
+  }, [])
+
+  // 获取每日冷笑话
+  const fetchDailyColdJoke = useCallback(async (forceRefresh: boolean = false, retryCount = 0) => {
+    const maxRetries = 2 // 最多重试2次
+
+    // 先检查缓存
+    if (!forceRefresh) {
+      const cached = getCachedDailyColdJoke()
+      if (cached) {
+        setDailyColdJoke(cached)
+        return
+      }
+    }
+
+    const doFetch = async () => {
+      try {
+        const res = await fetch('/api/jokes/cold')
+        const data = await res.json()
+        if (data.code === 1 && data.data.length > 0) {
+          const joke = data.data[0]
+          setDailyColdJoke(joke)
+          saveDailyColdJoke(joke)
+          return true
+        } else {
+          // API 返回空数据，重试
+          if (retryCount < maxRetries) {
+            console.log(`每日冷笑话请求为空，第${retryCount + 1}次重试...`)
+            await new Promise((resolve) => setTimeout(resolve, 1000))
+            return doFetch()
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch daily cold joke:', error)
+        // 网络错误，重试
+        if (retryCount < maxRetries) {
+          console.log(`每日冷笑话请求失败，第${retryCount + 1}次重试...`)
           await new Promise((resolve) => setTimeout(resolve, 1000))
           return doFetch()
         }
@@ -251,14 +326,12 @@ export default function HomePage() {
         setJokes(cachedData.jokes)
         setPage(cachedData.page)
         setHasMore(cachedData.hasMore)
-        // 设置 loading 为 false，先显示缓存
-        setLoading(false)
-      } else {
-        setLoading(true)
       }
+      // 设置 loading 为 false，先显示缓存
+      setLoading(false)
 
       // 然后请求最新数据
-      await Promise.all([fetchRandomJoke(false), fetchJokes(1, false)])
+      await Promise.all([fetchRandomJoke(false), fetchDailyColdJoke(false), fetchJokes(1, false)])
 
       // 请求完成后更新缓存
       const updatedData = getCachedJokesList()
@@ -270,7 +343,7 @@ export default function HomePage() {
       setCollectedIds(new Set(getCollects().map((item) => item.id)))
     }
     init()
-  }, [fetchRandomJoke, fetchJokes])
+  }, [fetchRandomJoke, fetchJokes, fetchDailyColdJoke])
 
   const handleRefresh = async () => {
     const now = Date.now()
@@ -285,6 +358,20 @@ export default function HomePage() {
     toast.success('换了一个新段子')
   }
 
+  // 刷新冷笑话
+  const handleColdRefresh = async () => {
+    const now = Date.now()
+    if (now - lastRefreshTime < 2000) {
+      toast.error('请稍后再试')
+      return
+    }
+    setColdRefreshing(true)
+    setLastRefreshTime(now)
+    await fetchDailyColdJoke(true)
+    setColdRefreshing(false)
+    toast.success('换了一个新冷笑话')
+  }
+
   const handleLoadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return
     setLoadingMore(true)
@@ -294,6 +381,7 @@ export default function HomePage() {
     setLoadingMore(false)
   }, [loadingMore, hasMore, page, fetchJokes])
 
+  // 滚动到底部自动加载更多
   // 滚动到底部自动加载更多
   useEffect(() => {
     const handleScroll = () => {
@@ -349,6 +437,51 @@ export default function HomePage() {
       </header>
 
       <main className={styles.main}>
+        {/* 今日冷笑话 - 暗调风格 */}
+        <section className={styles.coldJokeSection}>
+          <div className={styles.coldJokeHeader}>
+            <span className={styles.coldJokeTitle}>❄️ 今日冷笑话</span>
+          </div>
+          {loading ? (
+            <div className={styles.coldJokeCard}>
+              <Skeleton active paragraph={{ rows: 3 }} />
+            </div>
+          ) : dailyColdJoke ? (
+            <Link
+              href={`/cold-joke/${dailyColdJoke.id}?data=${encodeParams({ content: dailyColdJoke.content, time: dailyColdJoke.updateTime })}`}
+              className={styles.coldJokeCard}
+            >
+              {/* 装饰性雪花 */}
+              <span className={styles.snowflake}>❄</span>
+              <span className={styles.snowflake}>❅</span>
+              <span className={styles.snowflake}>❆</span>
+              <span className={styles.snowflake}>❄</span>
+
+              <p className={styles.coldJokeContent}>{dailyColdJoke.content}</p>
+              <div className={styles.coldJokeFooter}>
+                <span className={styles.coldJokeTime}>{dailyColdJoke.updateTime}</span>
+                <Button
+                  type="primary"
+                  icon={<ReloadOutlined spin={coldRefreshing} />}
+                  loading={coldRefreshing}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleColdRefresh()
+                  }}
+                  className={styles.coldJokeRefreshBtn}
+                >
+                  换一个
+                </Button>
+              </div>
+            </Link>
+          ) : (
+            <div className={styles.coldJokeCard}>
+              <p className={styles.coldJokeContent}>暂无冷笑话，请稍后再试</p>
+            </div>
+          )}
+        </section>
+
+        {/* 今日笑一笑 */}
         <section className={styles.dailySection}>
           <div className={styles.dailyHeader}>
             <span className={styles.dailyTitle}>✨ 今日也要笑一笑</span>
@@ -396,6 +529,7 @@ export default function HomePage() {
           )}
         </section>
 
+        {/* 更多段子 */}
         <section className={styles.listSection}>
           <h2 className={styles.sectionTitle}>🎭 更多段子</h2>
           {loading ? (
